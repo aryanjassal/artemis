@@ -6,7 +6,7 @@ compile:
 	@nasm -f bin src/boot/boot.asm -o bin/project-april.bin
 	@echo "Compilation done."
 	
-run: compile exec clean
+run: compile exec
 
 exec:
 	@echo "Executing Project April in QEMU..."
