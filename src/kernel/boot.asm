@@ -1,6 +1,11 @@
-[org 0x7c00]            ; Set the origin of the bootloader
+[org 0x7c00]
+; [BITS 16]
 
-loop:
+mov bp, 0x7c00          ; Move the stack base pointer at the memory address 0x7c00
+mov sp, bp              ; Move the current stack pointer at the baes (stack is empty)
+
+[global _start]
+_start:
   call fast_a20         ; Fast-enable the A20 line
   cli                   ; Clear BIOS interrupts
 
@@ -17,6 +22,7 @@ loop:
   jmp codeseg:clear_pipe    ; Perform a far-jump to clear the garbage 16-bit instructions and ready code for 32-bit architecture
 
 [BITS 32]
+; [extern kernel_main]
 clear_pipe:
   ; Store the correct address in the segment registers
   ; Refer here for the tutorial: http://www.osdever.net/tutorials/view/the-world-of-protected-mode
@@ -27,12 +33,14 @@ clear_pipe:
 
   mov [0xb8000], byte "P"         ; Move 'P' into the VGA video memory
   mov [0xb8001], byte 00001111b   ; Move the text formatting for the character into the next memory address
-
-  ; Start using C code from this point onwards
+  
+  ; call kernel_main      ; Call the actual C kernel code
+  
+  ; Code here shouldn't ever be executed. The code here is only if the kernel somehow returned.
   jmp $
 
 ; The code here will not be executed, but include statements will still work
-%include "src/boot/protected_mode.asm"
+%include "src/kernel/protected_mode.asm"
 
 ; Pad the entire bootloader with zeroes because the bootloader must be exactly 512 bytes in size
 times 510-($-$$) db 0
