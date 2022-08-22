@@ -1,16 +1,5 @@
 OUTPUT_FORMAT(binary)
-ENTRY(_start)
-
-INPUT
-(
-  bin/boot.bin
-  bin/kernel.o
-)
-
-OUTPUT
-(
-  bin/kernel.bin
-)
+ENTRY(kernel_main)
 
 SECTIONS
 {

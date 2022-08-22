@@ -16,5 +16,6 @@ bios_print:
     add si, 1         ; Add 1 to the counter of current character to print the next character
     jmp .print_loop   ; Jump back to the print loop to print the next character
 
+;! Maybe redundant and not required
 ; Define newline constant which can be really useful
 newline db 13, 10, 0

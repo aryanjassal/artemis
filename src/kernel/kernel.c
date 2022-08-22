@@ -1,4 +1,5 @@
-void kernel_main()
-{
-  
+#include "tty.h"
+
+void kernel_main() {
+  print_clear();
 }
