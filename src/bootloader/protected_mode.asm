@@ -1,3 +1,5 @@
+[BITS 16]
+
 ; This is a method to quickly enable the A20 line required for protected mode
 fast_a20:
   in al, 0x92
@@ -9,6 +11,7 @@ fast_a20:
 gdt:
   ; The first entry in the GDT should always be null
   gdt_null:
+    dq 0
     dq 0
   
   ; The GDT Segment Descriptor is quite poorly defined

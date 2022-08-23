@@ -1,5 +1,6 @@
 [BITS 16]
 
+; Prepare to enter 32-bit protected mode
 call fast_a20         ; Fast-enable the A20 line
 cli                   ; Clear BIOS interrupts
 
@@ -14,14 +15,12 @@ or eax, 1             ; Then, set the first bit in the <eax> register
 mov cr0, eax          ; Finally, move the <eax> with the PE bit set back into <cr0>
 
 jmp codeseg:clear_pipe    ; Perform a far-jump to clear the garbage 16-bit instructions and ready code for 32-bit architecture
-
 ; The code here will not be executed, but include statements will still work
-; Note that this code will be compiled in 16-bit real mode.
-%include "protected-mode.asm"
-%include "vga.asm"
+
+%include "protected_mode.asm"
 
 [BITS 32]
-[extern kernel_main]
+; [extern kernel_main]
 clear_pipe:
   ; Store the correct address in the segment registers
   ; Refer here for the tutorial: http://www.osdever.net/tutorials/view/the-world-of-protected-mode
