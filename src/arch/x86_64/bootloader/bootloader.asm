@@ -18,6 +18,7 @@ jmp codeseg:clear_pipe    ; Perform a far-jump to clear the garbage 16-bit instr
 ; The code here will not be executed, but include statements will still work
 ; Note that this code will be compiled in 16-bit real mode.
 %include "protected-mode.asm"
+%include "vga.asm"
 
 [BITS 32]
 [extern kernel_main]
@@ -29,10 +30,20 @@ clear_pipe:
   mov ss, ax        ; Store proper value in the <ss> regsiter (<ss> register is the stack segment)
   mov esp, 0x90000  ; Start the stack at memory address 0x90000 (refer to the memory address table in the aforementioned site)
 
-  mov [0xb8000], byte ";"         ; Move 'P' into the VGA video memory
+  mov [0xb8000], byte "3"         ; Move '3' into the VGA video memory
   mov [0xb8001], byte 00001111b   ; Move the text formatting for the character into the next memory address
-  mov [0xb8002], byte ")"         ; Move 'P' into the VGA video memory
+  mov [0xb8002], byte "2"         ; Move '2' into the VGA video memory
   mov [0xb8003], byte 00001111b   ; Move the text formatting for the character into the next memory address
+  mov [0xb8004], byte "-"         ; Move '-' into the VGA video memory
+  mov [0xb8005], byte 00001111b   ; Move the text formatting for the character into the next memory address
+  mov [0xb8006], byte "b"         ; Move 'b' into the VGA video memory
+  mov [0xb8007], byte 00001111b   ; Move the text formatting for the character into the next memory address
+  mov [0xb8008], byte "i"         ; Move 'i' into the VGA video memory
+  mov [0xb8009], byte 00001111b   ; Move the text formatting for the character into the next memory address
+  mov [0xb800a], byte "t"         ; Move 't' into the VGA video memory
+  mov [0xb800b], byte 00001111b   ; Move the text formatting for the character into the next memory address
+  mov [0xb800c], byte " "         ; Move ' ' into the VGA video memory
+  mov [0xb800d], byte 00001111b   ; Move the text formatting for the character into the next memory address
   
   ; call kernel_main      ; Call the actual C kernel code
   

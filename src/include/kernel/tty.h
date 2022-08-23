@@ -23,11 +23,15 @@ enum {
   VGA_COLOR_WHITE = 15
 };
 
-// Clear the screen by replacing all the characters by spaces and reset the internal cursor position
-void print_clear();
+// // Prints the literal 'Hi' on the top left of the screen
+// Runs the test code as specified by the code
+void test_print();
 
-// Print one character onto the screen and increment the internal cursor position
-void print_char(char character);
+// // Clear the screen by replacing all the characters by spaces and reset the internal cursor position
+// void clear_screen();
+
+// // Print one character onto the screen and increment the internal cursor position
+// void print_char(char character);
 
 // // Print a string onto the screen and increment the internal cursor position respectively
 // void print_string(char* str);

@@ -12,7 +12,7 @@ jmp SECOND_STAGE
 readdisk:
   mov ah, 0x02            ; Tell the BIOS we'll be reading the disk
   mov bx, SECOND_STAGE    ; Put the new data we read from the disk starting from the specifed location
-  mov al, 8               ; Read n number of sectors from disk
+  mov al, 15              ; Read n number of sectors from disk
   mov dl, [BOOT_DISK]     ; Read from the disk [boot drive]
   mov ch, 0x00            ; Cylinder 0
   mov dh, 0x00            ; Head 0

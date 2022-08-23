@@ -1,3 +1,5 @@
+;! This entire file is basically redundant now.
+;! This is still here just in case.
 bios_print:
   pusha     ; Push the <a> registers because they will be used
 

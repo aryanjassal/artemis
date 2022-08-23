@@ -1,5 +1,6 @@
 #include "tty.h"
+#include <stdint.h>
 
 void kernel_main() {
-  print_clear();
+  test_print();
 }
