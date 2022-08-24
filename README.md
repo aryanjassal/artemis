@@ -7,7 +7,7 @@ This is an operating system I'm working on as a hobby. I have dubbed this operat
 To run the operating system, you need to first clone this repository. Then, run the following command in the same directory where the `Makefile` is located. Please note that you need to have the `qemu` and `nasm` packages installed in order to run this operating system.
   
 ```bash
-make run
+make
 ```
 
 And that's it! This should compile the operating system and open up a QEMU window with the operating system.
