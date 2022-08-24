@@ -7,12 +7,13 @@ mov sp, bp                ; Move the current stack pointer at the base (stack is
 mov [BOOT_DISK], dl       ; Store the boot disk for later use
 SECOND_STAGE equ 0x8000   ; This is where the second stage will be loaded to
 
-mov si, welcome_msg
+mov si, INFO_WELCOME
 call bios_print
 
 call read_disk        ; Call the function to read the disk to load the next stage
 jmp SECOND_STAGE      ; Perform a jump to the second stage of the bootloader
 ; No code will be executed this point onwards
+; All the function definitions will go after here
 
 ; This method reads a given number of sectors from the boot disk
 read_disk:
@@ -27,18 +28,18 @@ read_disk:
   mov bx, SECOND_STAGE    ; Put the new data we read from the disk starting from the specifed location
 
   int 0x13                ; Read disk interrupt
-  jc diskreadfailed       ; Jump to error handler (kinda?) if diskread fails
+  jc read_disk_failed     ; Jump to error handler (kinda?) if diskread fails
   ret                     ; Return the control flow
 
 ; Print an error message that the disk was not able to be read properly then hang indefinitely.
-diskreadfailed:
-  mov si, error_diskreaderror
+read_disk_failed:
+  mov si, ERROR_DISKREADERROR
   call bios_print
   jmp $
 
 ; Create strings for future use
-welcome_msg db "Welcome to AprilOS!", 13, 10, 0
-error_diskreaderror db "Failure in reading drive!", 13, 10, 0
+INFO_WELCOME db "Welcome to AprilOS!", 13, 10, 0
+ERROR_DISKREADERROR db "Failure in reading drive!", 13, 10, 0
 
 ; The BIOS print routine
 bios_print:

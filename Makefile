@@ -13,7 +13,7 @@ MKDIR := @mkdir -p
 CAT := @cat
 
 ASMFLAGS := -I $(BOOTLOADER_SRC_DIR)
-QEMUFLAGS = -drive file=$(OUTPUT_BIN),if=floppy,index=0,media=disk,format=raw
+QEMUFLAGS = -drive file=$(OUTPUT_BIN),if=floppy,index=0,media=disk,format=raw -no-reboot
 
 .PHONY: all build exec
 
