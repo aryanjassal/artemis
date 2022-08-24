@@ -28,7 +28,6 @@ build: $(BOOTLOADER_SRC_FILES)
 	$(ASMC) $(ASMFLAGS) -f elf64 $(BOOTLOADER_SRC_DIR)/stage_two.asm -o $(BOOTLOADER_BUILD_DIR)/stage_two.o
 	$(LD) $(BOOTLOADER_LDFLAGS) $(BOOTLOADER_BUILD_DIR)/stage_two.o -o $(BOOTLOADER_BUILD_DIR)/stage_two.bin
 	$(CAT) $(BOOTLOADER_OBJECT_FILES) > $(OUTPUT_BIN)
-# $(ASMC) $(ASMFLAGS) -f bin $(BOOTLOADER_SRC_DIR)/stage_one.asm -o $(OUTPUT_BIN)
 	$(ECHO) "Compilation done."
 
 exec:

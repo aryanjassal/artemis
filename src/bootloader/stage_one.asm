@@ -1,5 +1,3 @@
-; TODO: FIX THIS SHIT CODE
-
 [org 0x7c00]        ; Set the origin of the bootloader
 
 ; Move the boot disk into a variable which will be used when reading from disk
