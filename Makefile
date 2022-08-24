@@ -13,7 +13,7 @@ MKDIR := @mkdir -p
 CAT := @cat
 
 ASMFLAGS := -I $(BOOTLOADER_SRC_DIR)
-QEMUFLAGS = -drive file=$(OUTPUT_BIN),if=floppy,index=0,media=disk,format=raw -no-reboot
+QEMUFLAGS = -drive file=$(OUTPUT_BIN),if=floppy,index=0,media=disk,format=raw
 
 .PHONY: all build exec
 
@@ -22,9 +22,10 @@ all: build exec
 build: $(BOOTLOADER_SRC_FILES)
 	$(ECHO) "Compiling..."
 	$(MKDIR) dist
-	$(ASMC) $(ASMFLAGS) -f bin $(BOOTLOADER_SRC_DIR)/stage_one.asm -o $(BOOTLOADER_BUILD_DIR)/stage_one.o
-	$(ASMC) $(ASMFLAGS) -f elf64 $(BOOTLOADER_SRC_DIR)/stage_two.asm -o $(BOOTLOADER_BUILD_DIR)/stage_two.o
-	$(CAT) $(BOOTLOADER_OBJECT_FILES) > $(OUTPUT_BIN)
+# $(ASMC) $(ASMFLAGS) -f bin $(BOOTLOADER_SRC_DIR)/stage_one.asm -o $(BOOTLOADER_BUILD_DIR)/stage_one.o
+# $(ASMC) $(ASMFLAGS) -f elf64 $(BOOTLOADER_SRC_DIR)/stage_two.asm -o $(BOOTLOADER_BUILD_DIR)/stage_two.o
+# $(CAT) $(BOOTLOADER_OBJECT_FILES) > $(OUTPUT_BIN)
+	$(ASMC) $(ASMFLAGS) -f bin $(BOOTLOADER_SRC_DIR)/stage_one.asm -o $(OUTPUT_BIN)
 	$(ECHO) "Compilation done."
 
 exec:
