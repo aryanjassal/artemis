@@ -15,7 +15,6 @@ _start:
   mov si, INFO_GREETING
   call vprint
 
-
   ; Halt execution of code here for now
   jmp $
 
@@ -24,6 +23,9 @@ _start:
 ; Use it to make useful functions or variables
 ; ---------------------------------------------
 
+;TODO: Get keyboard input system working
+;TODO: Get setcursor working
+;TODO: Get C code working
 ; Implement the code to print by moving character information directly into VGA memory
 vprint:
   ; Push the values of <eax>, <ecx>, and <edx> as they will be modified throughout the program
