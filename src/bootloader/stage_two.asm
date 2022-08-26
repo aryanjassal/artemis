@@ -1,21 +1,29 @@
 ; Provide the _start symbol globally so the linker doesn't complain
 [global _start]
+; Include the external C kernel file
+[extern kernel_main]
 ; Compile this file with the 32-bit instruction set
 [bits 32]
 ; This start label is here just to tell the linker where the executable code startes from
 _start:
   ; Move the VGA buffer to ebx
   mov ebx, 0xb8000
-  mov dl, 0x0f
+  mov dl, 0x01
+
+  ; Clear the screen
+  call vclear
 
   ; Print something to the VGA buffer
-  call vclear
   mov si, INFO_PROTECTEDMODE
   call vprint
-  mov si, INFO_GREETING
-  call vprint
+  
+  call kernel_main
 
-  ; Halt execution of code here for now
+  ; This code should never be called. If this code is executing, it means that the kernel unexpectedly returned.
+  ; In that case, print an error message to the user and halt program execution
+  mov dl, 0x04
+  mov si, ERROR_KERNELRETURNED
+  call vprint
   jmp $
 
 ; ---------------------------------------------
@@ -24,7 +32,6 @@ _start:
 ; ---------------------------------------------
 
 ;TODO: Get keyboard input system working
-;TODO: Get setcursor working
 ;TODO: Get C code working
 ; Implement the code to print by moving character information directly into VGA memory
 vprint:
@@ -120,6 +127,6 @@ vclear:
   ret                 ; Return from the function
 
 ; Declaring strings
-INFO_PROTECTEDMODE db "(i) successfully entered 32-bit protected mode", 13, 10, 0
-INFO_GREETING db "(i) welcome to Project April, aka AprilOS!", 13, 10, 0
+INFO_PROTECTEDMODE db "[INFO] successfully entered 32-bit protected mode", 13, 10, 0
+ERROR_KERNELRETURNED db "[ERROR] kernel returned unexpectedly", 13, 10, 0
 VGA_NEWLINE db 13, 10, 0
