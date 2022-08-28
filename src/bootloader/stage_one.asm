@@ -1,12 +1,10 @@
-[org 0x7c00]        ; Set the origin of the bootloader
-
-; Move the boot disk into a variable which will be used when reading from disk
-; mov [BOOT_DISK], dl       ; Store the boot disk for later use
+[org 0x7c00]      ; Set the origin of the bootloader
 
 ; Initialise the stack at 0x7c00
 mov bp, 0x7c00    ; Move the stack base pointer at the memory address 0x7c00
 mov sp, bp        ; Move the current stack pointer to the base (stack is empty)
 
+; Clear the screen
 call clear
 
 ; Print a simple greeting to the user
@@ -19,9 +17,6 @@ call print
 
 jmp $
 
-; Load the second stage of the bootloader into the memory
-; call read_disk
-
 ; ---------------------------------------------
 ; Code after this point will not get executed
 ; Use it to make useful functions or variables
@@ -29,35 +24,25 @@ jmp $
 
 ; Set the cursor position (<dh> is rows and <dl> is columns)
 set_cursor:
-  ; push ax
-  ; push bx
-  pusha
-
-  mov ah, 0x02
-  mov bh, 0
-  int 0x10
-
-  ; pop bx
-  ; pop ax
-  popa
-  ret
+  pusha         ; Push the value of all the registers to the stack
+  mov ah, 0x02  ; Set <al> to 0x02, which is to set the cursor position
+  mov bh, 0     ; Set the video page (needs to be zero for graphical mode)
+  int 0x10      ; Call the BIOS video interrupt
+  popa          ; Pop all the registers from the stack
+  ret           ; Return from this subroutine
 
 ; The BIOS clear screen function
 clear:
-  pusha
-
+  pusha           ; Push the value of all the registers to the stack
   mov ax, 0x0700  ; function 07, AL=0 means scroll whole window
   mov bh, 0x07    ; character attribute = white on black
   mov cx, 0x0000  ; row = 0, col = 0
   mov dx, 0x184f  ; row = 24 (0x18), col = 79 (0x4f)
   int 0x10        ; call BIOS video interrupt
-
-  mov dh, 0x00
-  mov dl, 0x00
-  call set_cursor
-
-  popa
-  ret
+  mov dx, 0x0000  ; Set <ds> and <dx> to the row and column to set the cursor to
+  call set_cursor ; Call the subroutine to actually change the cursor location
+  popa            ; Pop all the registers from the stack
+  ret             ; Return from this subroutine
 
 ; The BIOS print routine
 print:
@@ -78,37 +63,10 @@ print:
     add si, 1               ; Add 1 to <si> to print the next character in the buffer
     jmp .__bios_print_loop  ; Jump back to the print loop to print the next character
 
-; ; This method reads a given number of sectors from the boot disk
-; read_disk:
-;   mov ah, 0x02            ; Tell the BIOS we'll be reading the disk
-;   mov cl, 0x02            ; Start reading from sector 2 (because sector 1 is where we are now)
-;   mov al, 16              ; Read n number of sectors from disk
-;   mov ch, 0x00            ; Cylinder 0
-;   mov dh, 0x00            ; Head 0
-;   xor bx, bx              ; Clear the value in <bx>
-;   mov es, bx              ; Set the value of <es> to zero
-;   mov dl, [BOOT_DISK]     ; Read from the disk [boot drive]
-;   mov bx, SECOND_STAGE    ; Put the new data we read from the disk starting from the specifed location
-
-;   int 0x13                ; Read disk interrupt
-;   jc read_disk_failed     ; Jump to error handler (kinda?) if diskread fails
-;   ret                     ; Return the control flow
-
-; ; Print an error message that the disk was not able to be read properly then hang indefinitely.
-; read_disk_failed:
-;   mov si, ERROR_DISKREADERROR
-;   call bios_print
-;   jmp $
-
 ; Declaring strings that may or may not be used by the code later
 INFO_WELCOME db "Welcome to Project April", 13, 10, "This version is DOS2B pre-alpha-1", 13, 10, 0
 VIDEO_NEWLINE db 13, 10, 0
 CMD_PROMPT db "> ", 0
-; ERROR_DISKREADERROR db "ERROR: Disk read failed!", 13, 10, 0
-
-; Declaring disk-reading-related variables
-; BOOT_DISK db 0            ; Declare the BOOT_DISK variable
-; SECOND_STAGE equ 0x8000   ; This is where the second stage will be loaded to
 
 ; Pad the entire bootloader with zeroes because the bootloader must be exactly 512 bytes in size
 times 510-($-$$) db 0
