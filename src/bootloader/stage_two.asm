@@ -32,6 +32,24 @@ call print
   call strcmp
   jc .__cmdloop_greet
 
+  ; Check if the user wishes to poweroff the computer
+  mov si, VIDEO_CMD_BUFFER
+  mov di, CMD_POWEROFF
+  call strcmp
+  jc .__cmdloop_poweroff
+
+  ; Do the same with the FUCK command
+  mov si, VIDEO_CMD_BUFFER
+  mov di, CMD_FUCK
+  call strcmp
+  jc .__cmdloop_poweroff
+
+  ; Check if the user wants to see the help text
+  mov si, VIDEO_CMD_BUFFER
+  mov di, CMD_HELP
+  call strcmp
+  jc .__cmdloop_help
+
   ; Check if it is a blank line 
   mov si, VIDEO_CMD_BUFFER
   cmp byte [si], 0
@@ -58,6 +76,22 @@ call print
   mov si, VIDEO_NEWLINE
   call print
   jmp .command_loop
+
+.__cmdloop_poweroff:
+  jmp 0xffff:0x0000
+
+.__cmdloop_help:
+  mov si, CMD_HELP_ACTION
+  call print
+  jmp .command_loop
+
+; Just in case the code somehow reaches this place (it shouldn't)
+jmp $
+
+; ---------------------------------------------
+; Code after this point will not get executed
+; Use it to make useful functions or variables
+; ---------------------------------------------
 
 ; Set the cursor position (<dh> is rows and <dl> is columns)
 set_cursor:
@@ -200,9 +234,9 @@ CMD_CLEAR db "clear", 0
 CMD_GREET db "greet", 0
 CMD_PROMPT_NAME db "Enter your name: ", 0
 CMD_GREET_GREETING db "Hello, ", 0
-; CMD_HELP db "help", 0
-; CMD_POWEROFF db "poweroff", 0
-; CMD_FUCK db "poweroff", 0
+CMD_HELP db "help", 0
+CMD_POWEROFF db "poweroff", 0
+CMD_FUCK db "fuck", 0
 CMD_INVALID_COMMAND db "The entered command is invalid.", 13, 10, "Type `help` to see the list of all the commands.", 13, 10, 0
 
-
+CMD_HELP_ACTION db "This is a list of all the possible commands",13, 10, 13, 10, "`clear`     clears the screen", 13, 10, "`greet`     greets the user by prompting for their name first", 13, 10, "`poweroff`  powers the system down", 13, 10, "`help`      shows this help menu", 13, 10, 13, 10, 0
