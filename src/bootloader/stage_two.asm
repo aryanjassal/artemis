@@ -1,47 +1,63 @@
-[org 0x7c00]      ; Set the origin of the bootloader
-
-; Initialise the stack at 0x7c00
-mov bp, 0x7c00    ; Move the stack base pointer at the memory address 0x7c00
-mov sp, bp        ; Move the current stack pointer to the base (stack is empty)
+[org 0x7e00]
 
 ; Clear the screen
 call clear
 
-; Print a simple greeting to the user
+; Print a simple welcome message to the user
 mov si, INFO_WELCOME
 call print
+
+; Print a newline before handing control over to the command parser
 mov si, VIDEO_NEWLINE
 call print
-.loop:
+
+.command_loop:
+  ; Print the command prompt to the screen
   mov si, CMD_PROMPT
   call print
 
+  ; Reference the keyboard input buffer to <di>, then get the string
   mov di, VIDEO_CMD_BUFFER
   call get_string
 
+  ; Check if the command entered is the command to clear the screen
   mov si, VIDEO_CMD_BUFFER
   mov di, CMD_CLEAR
   call strcmp
-  jc ._clear_screen
+  jc .__cmdloop_clear_screen
 
+  ; Check if the user wishes to be greeted
+  mov si, VIDEO_CMD_BUFFER
+  mov di, CMD_GREET
+  call strcmp
+  jc .__cmdloop_greet
+
+  ; Check if it is a blank line 
   mov si, VIDEO_CMD_BUFFER
   cmp byte [si], 0
-  je .loop
+  je .command_loop
 
+  ; If it is an invalid command, tell the user that
+  mov si, CMD_INVALID_COMMAND
+  call print
+  jmp .command_loop
+
+.__cmdloop_clear_screen:
+  call clear
+  jmp .command_loop
+
+.__cmdloop_greet:
+  mov si, CMD_PROMPT_NAME
+  call print
+  mov di, VIDEO_CMD_BUFFER
+  call get_string
+  mov si, CMD_GREET_GREETING
+  call print
+  mov si, VIDEO_CMD_BUFFER
+  call print
   mov si, VIDEO_NEWLINE
   call print
-  jmp .loop
-
-._clear_screen:
-  call clear
-  jmp .loop
-
-jmp $
-
-; ---------------------------------------------
-; Code after this point will not get executed
-; Use it to make useful functions or variables
-; ---------------------------------------------
+  jmp .command_loop
 
 ; Set the cursor position (<dh> is rows and <dl> is columns)
 set_cursor:
@@ -176,14 +192,17 @@ strcmp:
       ret
 
 ; Declaring strings that may or may not be used by the code later
-INFO_WELCOME db "Welcome to DOS2B", 13, 10, "This version is DOS2B pre-alpha-1", 13, 10, 0
+INFO_WELCOME db "Welcome to DOS2B", 13, 10, "This version is DOS2B pre-alpha-3", 13, 10, 0
 VIDEO_NEWLINE db 13, 10, 0
 VIDEO_CMD_BUFFER times 64 db 0
 CMD_PROMPT db "> ", 0
-CMD_CLEAR db "clear"
+CMD_CLEAR db "clear", 0
+CMD_GREET db "greet", 0
+CMD_PROMPT_NAME db "Enter your name: ", 0
+CMD_GREET_GREETING db "Hello, ", 0
+; CMD_HELP db "help", 0
+; CMD_POWEROFF db "poweroff", 0
+; CMD_FUCK db "poweroff", 0
+CMD_INVALID_COMMAND db "The entered command is invalid.", 13, 10, "Type `help` to see the list of all the commands.", 13, 10, 0
 
-; Pad the entire bootloader with zeroes because the bootloader must be exactly 512 bytes in size
-times 510-($-$$) db 0
 
-; The magic signature which tells the computer that this file is bootable
-dw 0xaa55

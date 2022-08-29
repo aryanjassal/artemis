@@ -12,9 +12,10 @@ QEMU := @qemu-system-x86_64
 ECHO := @echo
 MKDIR := @mkdir -p
 CAT := @cat
+CLEAR := @clear
 
 ASMFLAGS := -I $(BOOTLOADER_SRC_DIR) -f bin
-QEMUFLAGS := -drive file=$(OUTPUT_BIN),if=floppy,index=0,media=disk,format=raw
+QEMUFLAGS := -drive file=$(OUTPUT_BIN),if=floppy,index=0,media=disk,format=raw -no-reboot
 
 .PHONY: all build exec
 
@@ -28,6 +29,7 @@ build: $(BOOTLOADER_OBJECT_FILES)
 exec:
 	$(ECHO) "Executing Project April in QEMU..."
 	$(QEMU) $(QEMUFLAGS)
+	$(CLEAR)
 
 $(BOOTLOADER_OBJECT_FILES): $(BOOTLOADER_BUILD_DIR)/%.bin : $(BOOTLOADER_SRC_DIR)/%.asm
 	$(MKDIR) $(BOOTLOADER_BUILD_DIR)
