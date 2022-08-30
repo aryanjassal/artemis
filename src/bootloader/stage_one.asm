@@ -7,7 +7,7 @@ mov [BOOT_DISK], dl       ; Store the boot disk for later use
 mov bp, 0x7c00    ; Move the stack base pointer at the memory address 0x7c00
 mov sp, bp        ; Move the current stack pointer to the base (stack is empty)
 
-mov dl, 4
+mov byte [si], 4
 call read_disk
 jmp SECOND_STAGE
 
@@ -18,10 +18,10 @@ jmp SECOND_STAGE
 
 ; This method reads a given number of sectors from the boot disk
 read_disk:
-  pusha
+  pusha                   ; Push all the register values to the stack
   mov ah, 0x02            ; Tell the BIOS we'll be reading the disk
   mov cl, 0x02            ; Start reading from sector 2 (because sector 1 is where we are now)
-  mov al, dl              ; Read n number of sectors from disk
+  mov al, [si]            ; Read n number of sectors from disk
   mov ch, 0x00            ; Cylinder 0
   mov dh, 0x00            ; Head 0
   xor bx, bx              ; Clear the value in <bx>
@@ -30,7 +30,7 @@ read_disk:
   mov bx, SECOND_STAGE    ; Put the new data we read from the disk starting from the specifed location
 
   int 0x13                ; Read disk interrupt
-  popa
+  popa                    ; Pop all the register values from the stack
   jc read_disk_failed     ; Jump to error handler (kinda?) if diskread fails
   ret                     ; Return the control flow
 

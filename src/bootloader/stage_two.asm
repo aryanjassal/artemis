@@ -18,6 +18,7 @@ call print
 
   ; Reference the keyboard input buffer to <di>, then get the string
   mov di, VIDEO_CMD_BUFFER
+  mov ch, 64
   call get_string
 
   ; Check if the command entered is the command to clear the screen
@@ -81,7 +82,7 @@ call print
   jmp 0xffff:0x0000
 
 .__cmdloop_help:
-  mov si, CMD_HELP_ACTION
+  mov si, CMD_HELP_TEXT
   call print
   jmp .command_loop
 
@@ -137,96 +138,98 @@ print:
 ; Get a string from the user and store it in the <di> buffer
 ; The size of the <di> buffer is the maximum size of the command
 get_string:
-  pusha
-  xor cl, cl
+  push ax     ; Push the <ax> register onto the stack because it will be used.
+  xor cl, cl  ; Clear the <cl> register because this will be used to keep track of the characters entered
 
+  ; The main loop that reads a character until the buffer is full
   .__get_string_loop:
-    xor ah, ah
-    int 0x16
+    xor ah, ah    ; Clear the value of the <ah> register
+    int 0x16      ; Call the BIOS interrupt to read a character from the keyboard
 
-    cmp al, 0x08
-    je .__get_string_handle_backspace
+    cmp al, 0x08                        ; Check if the entered key is <0x08> or <backspace>
+    je .__get_string_handle_backspace   ; If it is, then jump to the subroutine to handle backspaces
     
-    cmp al, 0x0d
-    je .__get_string_handle_return
+    cmp al, 0x0d                        ; Check if the entered key is <0x0d> or <return>
+    je .__get_string_handle_return      ; If it is, then jump to the subroutine to handle returns
 
-    ; IMPLEMENT DYNAMIC BUFFER SIZE
-    cmp cl, 0x3f
-    je .__get_string_loop
+    cmp cl, ch                  ; Check if the value of <cl> counter is the same as the maximum length <ch>
+    je .__get_string_loop       ; If yes, then jump back to the character reading loop, only allowing enter and return characters
 
-    mov ah, 0x0e
-    int 0x10
+    mov ah, 0x0e  ; Tell the BIOS that we want to print a character onto the screen
+    int 0x10      ; Call the BIOS video interrupt
 
-    stosb
-    inc cl
-    jmp .__get_string_loop
+    stosb                     ; Store the value of the <al> register to the <si> register
+    inc cl                    ; Increment the <cl> counter register
+    jmp .__get_string_loop    ; Loop back to fetch another character from the user
 
-    ret
-
+  ; This subroutine handles backspaces entered into the program
   .__get_string_handle_backspace:
-    cmp cl, 0
-    je .__get_string_loop
+    cmp cl, 0               ; Check if the <cl> counter is 0 (at the start of the string)
+    je .__get_string_loop   ; In that case, ignore it
     
-    dec di
-    dec cl
-    mov byte [di], 0
+    dec di              ; Otherwise, decrement the memory address where <di> points (the buffer)
+    dec cl              ; Decrement the <cl> counter
+    mov byte [di], 0    ; Move null (0) to the current address pointed by the <di> register
 
-    mov ah, 0x0e
-    mov al, 0x08
-    int 0x10
+    mov ah, 0x0e        ; Tell the BIOS that we will be printing a character to the screen
+    mov al, 0x08        ; Move the <backspace> character to the <al> register to print
+    int 0x10            ; Call the BIOS video interrupt
 
-    mov al, " "
-    int 0x10
+    mov al, " "         ; Store an empty space in the <al> register to erase the character
+    int 0x10            ; Call the BIOS video interrupt
 
-    mov al, 0x08
-    int 0x10
+    mov al, 0x08        ; Move another <backspace> character to the <al> register
+    int 0x10            ; Call the BIOS video interrupt
 
-    jmp .__get_string_loop
+    jmp .__get_string_loop    ; Jump to the main characters loop
 
+  ; This subroutine handles returns or enter keys entered into the program
   .__get_string_handle_return:
-    mov al, 0
-    stosb
+    xor al, al      ; Clear the value of the <al> register
+    stosb           ; Store the value of the <al> register into the <si> register
 
-    mov ah, 0x0e
-    mov al, 0x0d
-    int 0x10
+    mov ah, 0x0e    ; Tell the BIOS that we want to print a character to the screen
+    mov al, 0x0d    ; Move the return feed character into the <al> register
+    int 0x10        ; Call the BIOS video interrupt
 
-    mov al, 0x0a
-    int 0x10
-    popa
-
-    ret
+    mov al, 0x0a    ; Move the newline character to the <al> buffer
+    int 0x10        ; Call the BIOS video interrupt
+    pop ax          ; Pop the <ax> register back from the stack
+    ret             ; Return from this function
 
 ; Compare if the two strings in <si> and <di> are the same
 ; If they are, then set the carry flag, otherwise the carry flag will not be set
 strcmp:
-  pusha
+  pusha     ; Push all the registers onto the stack because they will be used.
   
+  ; This subroutine compares one byte of the strings in <al> and <bl>
   .__strcmp_cmp_byte:
-    mov al, [si]
-    mov bl, [di]
-    cmp al, bl
-    jne .__strcmp_bytes_not_equal
+    mov al, [si]                    ; Move the current value of <si> register to the <al> register
+    mov bl, [di]                    ; Move the current value of <di> register to the <bl> register
+    cmp al, bl                      ; Compare if both the bytes are equal
+    jne .__strcmp_bytes_not_equal   ; If not, then execute the corresponding code
 
-    cmp al, 0
-    je .__strcmp_end_of_string
+    cmp al, 0                       ; Now that we know that the bytes are equal, check if they are null (end of string)
+    je .__strcmp_end_of_string      ; If yes, then jump to the correspondig code to handle the end of a sttring
 
-    inc di
-    inc si
-    jmp .__strcmp_cmp_byte
+    inc di                          ; Otherwise, increment the memory address pointed to by the <di> register
+    inc si                          ; Obviously, do the same for the <si> register
+    jmp .__strcmp_cmp_byte          ; Then jump back to the loop
 
+    ; This subroutine executes when any two bytes are not equal
     .__strcmp_bytes_not_equal:
-      clc
-      popa
-      ret
+      clc     ; Clear the carry flag
+      popa    ; Pop all the registers
+      ret     ; Return from this function
 
+    ; This subroutine executes when the end of the string has reached with the same bytes till now
     .__strcmp_end_of_string:
-      stc
-      popa
-      ret
+      stc     ; Set the carry flag
+      popa    ; Pop all the registers
+      ret     ; Return from this function
 
 ; Declaring strings that may or may not be used by the code later
-INFO_WELCOME db "Welcome to DOS2B", 13, 10, "This version is DOS2B pre-alpha-3", 13, 10, 0
+INFO_WELCOME db "Welcome to DOS2B (ver. pre-alpha-3)", 13, 10, "Type `help` to view a list of all commands", 13, 10, 0
 VIDEO_NEWLINE db 13, 10, 0
 VIDEO_CMD_BUFFER times 64 db 0
 CMD_PROMPT db "> ", 0
@@ -238,5 +241,4 @@ CMD_HELP db "help", 0
 CMD_POWEROFF db "poweroff", 0
 CMD_FUCK db "fuck", 0
 CMD_INVALID_COMMAND db "The entered command is invalid.", 13, 10, "Type `help` to see the list of all the commands.", 13, 10, 0
-
-CMD_HELP_ACTION db "This is a list of all the possible commands",13, 10, 13, 10, "`clear`     clears the screen", 13, 10, "`greet`     greets the user by prompting for their name first", 13, 10, "`poweroff`  powers the system down", 13, 10, "`help`      shows this help menu", 13, 10, 13, 10, 0
+CMD_HELP_TEXT db 13, 10, "`clear`     clears the screen", 13, 10, "`greet`     greets the user by prompting for their name first", 13, 10, "`poweroff`  powers the system down", 13, 10, "`fuck`      to use when you are angry", 13, 10, "`help`      shows this help menu", 13, 10, 13, 10, 0
