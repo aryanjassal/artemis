@@ -229,9 +229,11 @@ strcmp:
       ret     ; Return from this function
 
 ; Declaring strings that may or may not be used by the code later
-INFO_WELCOME db "Welcome to DOS2B (ver. pre-alpha-3)", 13, 10, "Type `help` to view a list of all commands", 13, 10, 0
-VIDEO_NEWLINE db 13, 10, 0
 VIDEO_CMD_BUFFER times 64 db 0
+VIDEO_ENDLINE db 13, 10
+VIDEO_NEWLINE db 13, 10, 0
+
+INFO_WELCOME db "Welcome to DOS2B (ver. pre-alpha-3)", 13, 10, "Type `help` to view a list of all commands", 13, 10, 0
 CMD_PROMPT db "> ", 0
 CMD_CLEAR db "clear", 0
 CMD_GREET db "greet", 0
