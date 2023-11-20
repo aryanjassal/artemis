@@ -78,7 +78,7 @@ bool read_fat(FILE *disk) {
 }
 
 bool read_rootdirectory(FILE *disk) {
-  u32 lba = g_bootsector.RESERVED_SECTORS + g_bootsector.SECTORS_PER_FAT;
+  u32 lba = g_bootsector.RESERVED_SECTORS + g_bootsector.SECTORS_PER_FAT * g_bootsector.NUMBER_OF_FAT;
   u32 size = sizeof(dir_entry) * g_bootsector.DIRECTORY_ENTRY_COUNT;
   u32 sectors = (size / g_bootsector.BYTES_PER_SECTOR);
   g_rootdirectory_end = lba + sectors;
@@ -102,16 +102,13 @@ bool read_file(dir_entry *file, FILE* disk, u8 *buf) {
   u16 cluster = file->FIRST_CLUSTER;
 
   do {
-    // u32 lba = g_rootdirectory_end + (cluster - 2) * g_bootsector.SECTORS_PER_CLUSTER;
-    u32 lba = 33 + (cluster - 2) * g_bootsector.SECTORS_PER_CLUSTER;
+    u32 lba = g_rootdirectory_end + (cluster - 2) * g_bootsector.SECTORS_PER_CLUSTER;
     ok = ok && read_sectors(disk, lba, g_bootsector.SECTORS_PER_CLUSTER, buf);
     buf += g_bootsector.SECTORS_PER_CLUSTER * g_bootsector.BYTES_PER_SECTOR;
 
     u32 fat_offset = cluster + (cluster / 2);
     cluster = (cluster & 1) ? (*(u16*)(g_fat + fat_offset)) >> 4 : (*(u16*)(g_fat + fat_offset)) & 0xfff;
   } while(ok && cluster < 0x0ff8);
-
-  printf("\n");
   return ok;
 }
 
@@ -170,6 +167,7 @@ int main(int argc, char **argv) {
   }
 
   // Print any printable characters, otherwise print their hex codes
+  printf("\n");
   for (size_t i = 0; i < file->SIZE; i++) {
     if (isprint(file_contents[i])) fputc(file_contents[i], stdout);
     else printf("<%02x>", file_contents[i]);
