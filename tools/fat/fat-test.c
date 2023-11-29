@@ -9,6 +9,10 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
 typedef u8 bool;
 #define true 1
 #define false 0
@@ -56,7 +60,7 @@ bootsector g_bootsector;
 
 u8 *g_fat = NULL;
 dir_entry *g_rootdirectory = NULL;
-u32 g_rootdirectory_end;  //TODO: Bugged value
+u32 g_rootdirectory_end;
 
 // Dynamically populates the bootsector
 bool read_bootsector(FILE* disk) {
@@ -113,6 +117,8 @@ bool read_file(dir_entry *file, FILE* disk, u8 *buf) {
 }
 
 int main(int argc, char **argv) {
+  i8 retval;
+
   if (argc != 3) {
     printf("invalid arguments\nusage is: '%s <disk> <filename>'\n", argv[0]);
     return -1;
@@ -136,23 +142,21 @@ int main(int argc, char **argv) {
 
   if (!read_fat(disk)) {
     fprintf(stderr, "failed to load fat\n");
-    free(g_fat);
-    return -3;
+    retval = -3;
+    goto free_fat;
   }
 
   if (!read_rootdirectory(disk)) {
     fprintf(stderr, "failed to read filesystem\n");
-    free(g_fat);
-    free(g_rootdirectory);
-    return -4;
+    retval = -4;
+    goto free_rootdir;
   }
 
   dir_entry *file = find_file(argv[2]);
   if (!file) {
     fprintf(stderr, "failed to locate file '%s'\n", argv[2]);
-    free(g_fat);
-    free(g_rootdirectory);
-    return -5;
+    retval = -5;
+    goto free_rootdir;
   }
 
   printf("found file '%s'\n", argv[2]);
@@ -160,10 +164,8 @@ int main(int argc, char **argv) {
   u8 *file_contents = (u8*) malloc(file->SIZE + g_bootsector.BYTES_PER_SECTOR);
   if (!read_file(file, disk, file_contents)) {
     fprintf(stderr, "failed to read file contents\n");
-    free(g_fat);
-    free(g_rootdirectory);
-    free(file_contents);
-    return -5;
+    retval = -5;
+    goto free_file;
   }
 
   // Print any printable characters, otherwise print their hex codes
@@ -174,8 +176,8 @@ int main(int argc, char **argv) {
   }
   printf("\n");
   
-  free(g_fat);
-  free(g_rootdirectory);
-  free(file_contents);
-  return 0;
+  free_file:    free(file_contents);
+  free_rootdir: free(g_rootdirectory);
+  free_fat:     free(g_fat);
+  return retval;
 }

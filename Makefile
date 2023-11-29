@@ -14,49 +14,55 @@ TOOLS_OBJ_FILES := $(patsubst $(TOOLS_DIR)/%.c, $(BUILD_DIR)/%, $(TOOLS_SRC_FILE
 OUTPUT_BIN := $(BUILD_DIR)/kernel.bin
 FLOPPY_IMG := $(BUILD_DIR)/floppy.img
 
-ASMC := @nasm
-QEMU := @qemu-system-x86_64
-ECHO := @echo
-MKDIR := @mkdir -p
-CAT := @cat
-CLEAR := @clear
-GCC := @gcc
-RM := @rm -rf --
+Q := @
+
+ASMC := $(Q)nasm
+QEMU := $(Q)qemu-system-x86_64
+ECHO := $(Q)echo
+MKDIR := $(Q)mkdir -p
+CAT := $(Q)cat
+CLEAR := $(Q)clear
+GCC := $(Q)gcc
+RM := $(Q)rm -rf --
 NO_OUT := >/dev/null 2>&1
 
-ASMFLAGS := -I $(SRC_DIR) -f bin
+ASMFLAGS := -f bin
 GCCFLAGS := -g 
-QEMUFLAGS := -fda $(FLOPPY_IMG) -no-reboot
+# QEMUFLAGS := -fda $(FLOPPY_IMG) -no-reboot $(QFLAGS)
+QEMUFLAGS := -drive file=$(FLOPPY_IMG),if=floppy,index=0,media=disk,format=raw -no-reboot -d in_asm >qemu.log 2>&1
 
 .PHONY: all bootloader kernel tools floppy exec clean
 
 all: tools floppy exec
 
-floppy: bootloader # kernel
-	$(ECHO) "Building the floppy image..."
-	@dd if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880 $(NO_OUT)
-	@mkfs.fat -F12 -n "DOS2B" $(FLOPPY_IMG) $(NO_OUT)
-	@dd if=$(BOOTLOADER_BIN) of=$(FLOPPY_IMG) conv=notrunc $(NO_OUT)
-	@mcopy -i $(FLOPPY_IMG) tools/fat/test.txt "::test.txt" $(NO_OUT)
-	@mcopy -i $(FLOPPY_IMG) tools/fat/another.txt "::another.txt" $(NO_OUT)
+debug: tools floppy
+	@bochs -f bochs_config
+
+floppy: bootloader kernel
+	@#$(ECHO) "Building the floppy image..."
+	$(Q)dd if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880 $(NO_OUT)
+	$(Q)mkfs.fat -F12 -n "DOS2B" $(FLOPPY_IMG) $(NO_OUT)
+	$(Q)dd if=$(BOOTLOADER_BIN) of=$(FLOPPY_IMG) conv=notrunc $(NO_OUT)
+	$(Q)mcopy -i $(FLOPPY_IMG) build/kernel.bin "::kernel.bin" $(NO_OUT)
+	$(Q)mcopy -i $(FLOPPY_IMG) tools/fat/test.txt "::test.txt" $(NO_OUT)
+	$(Q)mcopy -i $(FLOPPY_IMG) tools/fat/another.txt "::another.txt" $(NO_OUT)
 	$(ECHO) "Floppy image built."
 
 bootloader:
-	$(ECHO) "Compiling bootloader..."
+	@#$(ECHO) "Compiling bootloader..."
 	$(MKDIR) $(BUILD_DIR)
 	$(ASMC) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
-	$(ECHO) "Compilation done."
+	$(ECHO) "Bootloader compiled"
 
 kernel: $(OBJ_FILES)
-	$(ECHO) "Compiling kernel..."
-	$(CAT) $(OBJ_FILES) > $(OUTPUT_BIN)
-	$(ECHO) "Compilation done."
+	@#$(ECHO) "Compiling kernel..."
+	@# $(CAT) $(OBJ_FILES) > $(OUTPUT_BIN)
+	$(ECHO) "Kernel compiled"
 
 tools: $(TOOLS_OBJ_FILES)
-	$(ECHO) "Built tools."
 
 exec:
-	$(ECHO) "Executing in QEMU..."
+	$(ECHO) "Running..."
 	$(QEMU) $(QEMUFLAGS)
 
 $(OBJ_FILES): $(BUILD_DIR)/%.bin : $(SRC_DIR)/%.asm
@@ -65,7 +71,7 @@ $(OBJ_FILES): $(BUILD_DIR)/%.bin : $(SRC_DIR)/%.asm
 
 $(TOOLS_OBJ_FILES): $(BUILD_DIR)/% : $(TOOLS_DIR)/%.c
 	$(MKDIR) $(dir $@)
-	$(ECHO) "Building $(@F)"
+	$(ECHO) "Building tools/$(@F)"
 	$(GCC) $(GCCFLAGS) $(patsubst $(BUILD_DIR)/%, $(TOOLS_DIR)/%.c, $@) -o $@
 
 clean:
