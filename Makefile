@@ -27,7 +27,7 @@ GCC := $(Q)gcc
 RM := $(Q)rm -rf --
 NO_OUT := >/dev/null 2>&1
 
-ASMFLAGS := -f bin
+ASMFLAGS := -f bin -I $(SRC_DIR)
 GCCFLAGS := -g 
 QEMUFLAGS := -drive file=$(FLOPPY_IMG),if=floppy,index=0,media=disk,format=raw -no-reboot -d in_asm >qemu.log 2>&1
 
@@ -36,7 +36,7 @@ QEMUFLAGS := -drive file=$(FLOPPY_IMG),if=floppy,index=0,media=disk,format=raw -
 all: tools floppy exec
 
 debug: tools floppy
-	@bochs -f bochs_config
+	@bochs -q -f bochs_config
 
 floppy: bootloader kernel
 	$(Q)dd if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880 $(NO_OUT)
@@ -54,13 +54,9 @@ floppy: bootloader kernel
 	$(Q)mcopy -i $(FLOPPY_IMG) tools/fat/another.txt "::another.txt" $(NO_OUT)
 	$(ECHO) "Floppy image built."
 
-bootloader:
-	$(MKDIR) $(BUILD_DIR)
-	$(ASMC) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
-	$(ECHO) "Bootloader compiled"
+bootloader: $(BOOTLOADER_BIN)
 
 kernel: $(OBJ_FILES)
-	$(ECHO) "Kernel compiled"
 
 tools: $(TOOLS_OBJ_FILES)
 
@@ -70,7 +66,13 @@ exec:
 
 $(OBJ_FILES): $(BUILD_DIR)/%.bin : $(SRC_DIR)/%.asm
 	$(MKDIR) $(BUILD_DIR)
+	$(ECHO) "Building src/$(@F)"
 	$(ASMC) $(ASMFLAGS) $(patsubst $(BUILD_DIR)/%.bin, $(SRC_DIR)/%.asm, $@) -o $@
+
+$(BOOTLOADER_BIN):
+	$(MKDIR) $(BUILD_DIR)
+	$(ECHO) "Building boot/$(@F)"
+	$(ASMC) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
 
 $(TOOLS_OBJ_FILES): $(BUILD_DIR)/% : $(TOOLS_DIR)/%.c
 	$(MKDIR) $(dir $@)

@@ -348,8 +348,10 @@ print:
 ; Preprocessor macros so they don't take up any valuable disk space
 %define ENDL 0x0d, 0x0a
 
-; Kinda like statically defined budget preprocessors
-KERN_SEGMENT equ 0x2000
+; This offset means that the kernel will be loaded at address 0x0050:0x0000
+; or address 0x0500, which is start of 29.75 KiB conventional memory (according
+; to https://wiki.osdev.org/Memory_Map_(x86))
+KERN_SEGMENT equ 0x0050
 KERN_OFFSET equ 0x0000
 
 ; Variables
