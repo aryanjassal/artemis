@@ -70,7 +70,7 @@ post_jump:
     mov [NUMBER_OF_HEADS], dh
 
   ; Confirm that the bootloader is working
-  mov si, DBG_LOADING
+  mov si, DBG_BOOTING
   call print
 
   ; Get LBA of FAT root directory
@@ -258,16 +258,12 @@ lba_to_chs:
 
   ; Right now, cx is populated with the 5-bit-wide sector address
   ; from the previous calculation.
-
-  ; NOTE temp added here 
-  mov dh, dl
-
   mov ch, al
   shl ah, 6
   or cl, ah
 
-  ; ; Store the head number in its output register
-  ; mov dh, dl
+  ; Store the head number in its output register
+  mov dh, dl
 
   ; Restore the state of the registers
   pop ax
@@ -284,15 +280,12 @@ lba_to_chs:
 disk_read:
   ; Save the state of all the registers that will be modified
   push ax
-  push bx
-  push cx
-  push dx
   push di           ; For counting as all other registers are being used
 
   ; Perform the disk read operation
   push cx           ; cx contains the number of sectors to read
   call lba_to_chs
-  pop ax            ; ax = sectors to read, as required by the specification
+  pop ax            ; ax = sectors to read, as required by interrupt 0x10
 
   ; Prepare for reading disk
   mov ah, 0x02      ; Required for the interrupt
@@ -300,34 +293,22 @@ disk_read:
 
   .try_read:
     push ax
-    push bx
-    push cx
-    push dx
     stc             ; Some BIOSes fail to set this properly
     int 0x13
-    jnc .done
+    pop ax
+    jnc .exit
 
     ; Failed to read disk on this attempt
-    pop dx
-    pop cx
-    pop bx
-    pop ax
     dec di
     test di, di
     jz .floppy_err
 
     ; Reset the disk controller
     push ax
-    push bx
-    push cx
-    push dx
     mov ah, 0
     stc
     int 0x13
     jc .floppy_err
-    pop dx
-    pop cx
-    pop bx
     pop ax
 
     ; Try reading again
@@ -339,43 +320,30 @@ disk_read:
     cli
     hlt
 
-  .done:
-    ; Restoring state before calling int 0x13
-    pop dx
-    pop cx
-    pop bx
-    pop ax
-    ; Restoring state before calling function
+  .exit:
     pop di
-    pop dx
-    pop cx
-    pop bx
     pop ax
     ret
 
-; Prints out a null-terminated string pointed to by the si register
-; TODO: Use <lodsb> instruction and stuff to further optimise this
+; Prints out a null-terminated string to the teletype output
+; Parameters:
+;   - ds:si = first character of string
 print:
   push ax
   push bx
-  push cx
-  push dx
   mov ah, 0x0e
 
   .loop:
-    mov al, [si]            ; Move the next character into al
-    or al, al             
-    jnz .print_char
-    pop dx
-    pop cx
+    lodsb
+    or al, al
+    jz .exit
+    int 0x10
+    jmp .loop
+
+  .exit:
     pop bx
     pop ax
-    ret  
- 
-  .print_char:
-    int 0x10
-    inc si
-    jmp .loop
+    ret
 
 ; Preprocessor macros so they don't take up any valuable disk space
 %define ENDL 0x0d, 0x0a
@@ -389,7 +357,7 @@ F_KERN db "KERNEL  BIN"
 ERR_FLOPPY db "[ERR] read fail", ENDL, 0
 ERR_NO_KERN db "[ERR] kernel not found", ENDL, 0
 
-DBG_LOADING db "[INFO] booting...", ENDL, 0
+DBG_BOOTING db "[INFO] booting...", ENDL, 0
 
 ; The current kernel cluster being pointed to
 KERN_CLUSTER dw 0

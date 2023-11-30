@@ -112,6 +112,10 @@ bool read_file(dir_entry *file, FILE* disk, u8 *buf) {
 
     u32 fat_offset = cluster + (cluster / 2);
     cluster = (cluster & 1) ? (*(u16*)(g_fat + fat_offset)) >> 4 : (*(u16*)(g_fat + fat_offset)) & 0xfff;
+
+    // // For FAT16 support, just uncomment the bottom two lines and comment the previous two lines
+    // u32 fat_offset = cluster * 2;
+    // cluster = (*(u16*)(g_fat + fat_offset));
   } while(ok && cluster < 0x0ff8);
   return ok;
 }

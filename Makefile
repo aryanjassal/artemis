@@ -13,6 +13,7 @@ TOOLS_OBJ_FILES := $(patsubst $(TOOLS_DIR)/%.c, $(BUILD_DIR)/%, $(TOOLS_SRC_FILE
 
 OUTPUT_BIN := $(BUILD_DIR)/kernel.bin
 FLOPPY_IMG := $(BUILD_DIR)/floppy.img
+#FLOPPY_IMG2 := $(BUILD_DIR)/floppy2.img
 
 Q := @
 
@@ -28,7 +29,6 @@ NO_OUT := >/dev/null 2>&1
 
 ASMFLAGS := -f bin
 GCCFLAGS := -g 
-# QEMUFLAGS := -fda $(FLOPPY_IMG) -no-reboot $(QFLAGS)
 QEMUFLAGS := -drive file=$(FLOPPY_IMG),if=floppy,index=0,media=disk,format=raw -no-reboot -d in_asm >qemu.log 2>&1
 
 .PHONY: all bootloader kernel tools floppy exec clean
@@ -39,9 +39,15 @@ debug: tools floppy
 	@bochs -f bochs_config
 
 floppy: bootloader kernel
-	@#$(ECHO) "Building the floppy image..."
 	$(Q)dd if=/dev/zero of=$(FLOPPY_IMG) bs=512 count=2880 $(NO_OUT)
 	$(Q)mkfs.fat -F12 -n "DOS2B" $(FLOPPY_IMG) $(NO_OUT)
+	@# Uncomment this and $(FLOPPY_IMG2) to build a FAT16 combatible 18 MiB floppy 
+	@# disk image for testing
+	@#$(Q)dd if=/dev/zero of=$(FLOPPY_IMG2) bs=512 count=36000 $(NO_OUT)
+	@#$(Q)mkfs.fat -F16 -n "DOS2B" $(FLOPPY_IMG2) $(NO_OUT)
+	@#$(Q)mcopy -i $(FLOPPY_IMG2) tools/fat/test.txt "::test.txt" $(NO_OUT)
+	@#$(Q)mcopy -i $(FLOPPY_IMG2) tools/fat/another.txt "::another.txt" $(NO_OUT)
+	@# FAT16 floppy section end
 	$(Q)dd if=$(BOOTLOADER_BIN) of=$(FLOPPY_IMG) conv=notrunc $(NO_OUT)
 	$(Q)mcopy -i $(FLOPPY_IMG) build/kernel.bin "::kernel.bin" $(NO_OUT)
 	$(Q)mcopy -i $(FLOPPY_IMG) tools/fat/test.txt "::test.txt" $(NO_OUT)
@@ -49,14 +55,11 @@ floppy: bootloader kernel
 	$(ECHO) "Floppy image built."
 
 bootloader:
-	@#$(ECHO) "Compiling bootloader..."
 	$(MKDIR) $(BUILD_DIR)
 	$(ASMC) $(ASMFLAGS) $(BOOTLOADER_SRC) -o $(BOOTLOADER_BIN)
 	$(ECHO) "Bootloader compiled"
 
 kernel: $(OBJ_FILES)
-	@#$(ECHO) "Compiling kernel..."
-	@# $(CAT) $(OBJ_FILES) > $(OUTPUT_BIN)
 	$(ECHO) "Kernel compiled"
 
 tools: $(TOOLS_OBJ_FILES)
