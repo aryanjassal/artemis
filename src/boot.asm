@@ -1,5 +1,6 @@
 org 0x7c00
 bits 16
+;cpu 8086
 
 ; Mandatory part of FAT implementation
 ; <jmp short code> breaks everything for some reason, so <jmp code> is used 
@@ -85,7 +86,10 @@ post_jump:
   ; Get size of each directory entry (in sectors)
   ; size = (32 * DIRECTORY_ENTRY_COUNT) / BYTES_PER_SECTOR
   mov ax, [DIRECTORY_ENTRY_COUNT]
-  shl ax, 5   ; Fancy and fast way to multiply ax by 32 (2^5)
+  push cx
+  mov cl, 5
+  shl ax, cl   ; Fancy and fast way to multiply ax by 32 (2^5)
+  pop cx
   xor dx, dx
   div word [BYTES_PER_SECTOR]
   test dx, dx
@@ -168,6 +172,7 @@ post_jump:
     ; Push back the buffer by the bytes read
     ; Redundant in this case, but might be required for other disks
     ; TODO: If file is > 30KiB (as per osdev wiki), then there will be an overflow.
+    ; TODO: This 29.75KiB is shared with the stack, so the kernel cannot be too large
     ; This needs to be accounted and the segment register must be incrememnted.
     ; buf += SECTORS_PER_CLUSTER * BYTES_PER_SECTOR
     
@@ -198,7 +203,10 @@ post_jump:
     jz .even
 
   .odd:
-    shr ax, 4
+    push cx
+    mov cl, 4
+    shr ax, cl
+    pop cx
     jmp .test_eof
 
   .even:
@@ -259,7 +267,10 @@ lba_to_chs:
   ; Right now, cx is populated with the 5-bit-wide sector address
   ; from the previous calculation.
   mov ch, al
-  shl ah, 6
+  push cx
+  mov cl, 6
+  shl ah, cl
+  pop cx
   or cl, ah
 
   ; Store the head number in its output register

@@ -52,7 +52,10 @@ lba_to_chs:
   ; Right now, cx is populated with the 5-bit-wide sector address
   ; from the previous calculation.
   mov ch, al
-  shl ah, 6
+  push cx
+  mov cl, 6
+  shl ah, cl
+  pop cx
   or cl, ah
 
   ; Store the head number in its output register
