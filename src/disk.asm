@@ -111,8 +111,13 @@ disk_read:
     jmp .try_read
 
   .floppy_err:
-    mov si, ERR_FLOPPY
-    call puts
+    push ax
+    push bx
+    mov bx, ERR_FLOPPY
+    mov ah, 0x09
+    int 0x21
+    pop bx
+    pop ax
     cli
     hlt
 
@@ -121,8 +126,8 @@ disk_read:
     pop ax
     ret
 
-; To enable IO with the console
-%include "tty.asm"
+; ; To enable IO with the console
+; %include "tty.asm"
 
 ; Disk information
 ; Ignore the first three bits as they are for jumping to code segment
@@ -152,4 +157,5 @@ SYSTEM_ID:                times 8 db 0
 times 2048 db 0
 
 ; Variable definitions
-ERR_FLOPPY db "floppy read error", 0
+; As per MS-DOS specifications, strings must be $-terminated
+ERR_FLOPPY db "floppy read error", "$"

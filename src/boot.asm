@@ -1,6 +1,6 @@
 org 0x7c00
 bits 16
-;cpu 8086
+cpu 8086
 
 ; Mandatory part of FAT implementation
 ; <jmp short code> breaks everything for some reason, so <jmp code> is used 
@@ -43,9 +43,13 @@ code:
   mov bp, 0x7c00
   mov sp, bp
 
-  ; Far jump to ensure we are at 0000:7c00
+  ; Far jump to ensure we are at 0000:7c00.
+  ; In the 8086, immediate values cannot be pushed onto the stack, so the value
+  ; is first being moved to the <ax> register before the register is pushed onto
+  ; the stack.
+  mov word ax, post_jump
   push es
-  push word post_jump
+  push ax
   retf
 
 post_jump:

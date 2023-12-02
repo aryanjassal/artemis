@@ -3,71 +3,35 @@ bits 16
 cpu 8086
 
 _start:
-  mov [BOOT_DRIVE], dl
-  call disk_read_headers
-  
-  mov si, MSG_GREET
-  call puts
-
+  ; Reigster interrupts immediately
   call register_interrupts
-  
-  xor ax, ax
+
+  ; Test int 0x21 service 0x02
   mov ah, 0x02
   mov dl, "X"
   int 0x21
+  mov dl, "Y"
+  int 0x21
+  mov dl, "Z"
   int 0x21
 
+  ; Test int 0x21 service 0x09
+  mov bx, MSG_GREET
+  mov ah, 0x09
+  int 0x21
+  int 0x21
+
+  ; Just halt here because there is nothing else to do
   cli
   hlt
 
-; .loop:
-;   call clear
-;
-;   mov di, KBD_BUFFER
-;   xor al, al
-;   times 32 stosb
-;
-;   mov si, MSG_GREET
-;   call puts
-;   mov si, TTY_PROMPT
-;   call puts
-;
-;   mov bx, 0x0d
-;   mov cx, 8
-;   mov di, KBD_BUFFER
-;   call getstr
-;
-;   jnc .nerr
-;   
-;   mov si, ERR_OVERFLOW
-;   call puts
-;
-;   call getch
-;   jmp .loop
-;
-;   .nerr:
-;     mov si, DBG_INPUT
-;     call puts
-;
-;     mov si, KBD_BUFFER
-;     call puts
-;
-;     call getch
-;     jmp .loop
-;   cli
-;   hlt
-
 ; Include the dos interrupts
-%include "dosint.asm"
+%include "dos_int.asm"
 
-; "disk.asm" includes "tty.asm"
-%include "disk.asm"
-
-; Strings
-MSG_GREET db "Welcome to DOS2B v0.0.5", ENDL, 0
-ERR_OVERFLOW db ENDL, "BUFFER OVERFLOW", 0
-DBG_INPUT db ENDL, "INPUT OK", ENDL, "YOU ENTERED: ", 0
-TTY_PROMPT db "> ", 0
+; Strings ($-terminated)
+MSG_GREET db "Welcome to DOS2B v0.0.5&", KEY_BACK, KEY_CR, 
+          db "/n NEWLINE TEST*", KEY_CR, 
+          db "&", KEY_BACK, KEY_BACK, "]", KEY_CR, STR_END
 
 ; Buffers
 KBD_BUFFER: times 32 db 0
