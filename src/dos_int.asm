@@ -177,9 +177,10 @@ putc:
   .handle_back:
     .back_loop:
       sub di, 2
-      cmp byte [es:di + 2], 0
+      cmp byte [es:di], 0
       je .back_loop
 
+      ; add di, 2
       mov byte [es:di], 0
       mov [ADR_VIDMEM_OFF], di
       jmp .exit
