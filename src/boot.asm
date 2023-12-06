@@ -37,9 +37,9 @@ code:
   xor ax, ax
   mov ds, ax
   mov es, ax
+  mov ss, ax
 
   ; Initialise the stack
-  mov ss, ax
   mov bp, 0x7c00
   mov sp, bp
 
