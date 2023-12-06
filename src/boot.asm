@@ -62,7 +62,13 @@ post_jump:
   int 0x13
   jnc .no_err
 
+  ; temporary error handler
+  ; TODO: fix this
+  cli
+  hlt
+
   .no_err:
+    ; To combat against BIOS bugs
     pop es
 
     ; Sector count
@@ -76,7 +82,7 @@ post_jump:
 
   ; Confirm that the bootloader is working
   mov si, DBG_BOOTING
-  call print
+  call puts
 
   ; Get LBA of FAT root directory
   ; lba = RESERVED_SECTORS + (SECTORS_PER_FAT * NUMBER_OF_FAT)
@@ -133,7 +139,7 @@ post_jump:
 
     ; Kernel was not found
     mov si, ERR_NO_KERN
-    call print
+    call puts
     cli
     hlt
 
@@ -331,7 +337,7 @@ disk_read:
 
   .floppy_err:
     mov si, ERR_FLOPPY
-    call print
+    call puts
     cli
     hlt
 
@@ -343,9 +349,9 @@ disk_read:
 ; Prints out a null-terminated string to the teletype output
 ; Parameters:
 ;   - ds:si = first character of string
-print:
-  push ax
-  push bx
+puts:
+push ax
+push bx
   mov ah, 0x0e
 
   .loop:
@@ -374,7 +380,7 @@ F_KERN db "KERNEL  BIN"
 ERR_FLOPPY db "[ERR] read fail", ENDL, 0
 ERR_NO_KERN db "[ERR] kernel not found", ENDL, 0
 
-DBG_BOOTING db "[INFO] booting...", ENDL, 0
+DBG_BOOTING db "booting...", ENDL, 0
 
 ; The current kernel cluster being pointed to
 KERN_CLUSTER dw 0

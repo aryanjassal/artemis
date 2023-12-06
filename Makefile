@@ -18,7 +18,7 @@ FLOPPY_IMG := $(BUILD_DIR)/floppy.img
 Q := @
 
 ASMC := $(Q)nasm
-QEMU := $(Q)qemu-system-x86_64
+QEMU := $(Q)qemu-system-i386
 ECHO := $(Q)echo
 MKDIR := $(Q)mkdir -p
 CAT := $(Q)cat

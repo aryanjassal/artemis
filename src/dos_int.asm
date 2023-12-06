@@ -1,4 +1,4 @@
-; Provide interrupt services similar to MS-DOS"s interrupt API.
+; Provide interrupt services similar to MS-DOS's interrupt API.
 ; Refer to https://en.wikipedia.org/wiki/DOS_API for a detailed list of the
 ; available API calls and how they work.
 ; Note that any specific API calls may or may not be implemented.
@@ -7,7 +7,6 @@ BITS 16
 
 ; Modifying IVT 0x21, with each entry being 4 bytes long.
 DOS_IVT_OFFSET equ 0x21 * 4
-; KBD_IVT_OFFSET equ 0x09 * 4
 
 ; Registers all the interrupt handlers in the Interrupt Vector Table.
 ; Parameters:
@@ -34,12 +33,12 @@ register_interrupts:
   xor ax, ax
   mov ds, ax
 
-  ; Modifying the IVT shouldn"t be interrupted.
+  ; Modifying the IVT shouldn't be interrupted.
   cli
   
   ; The format of an entry in the IVT follows <segment:offset> formatting.
   ; Thus, the first two bytes are used for the offset, and the last two for the
-  ; segment. Note that the IVT spans 0x0000:0x0000 to 0x0000:0x03ff.
+  ; segment. The IVT spans 0x0000:0x0000 to 0x0000:0x03ff.
   mov word [DOS_IVT_OFFSET], bx
   mov word [DOS_IVT_OFFSET + 2], ds
 
@@ -55,7 +54,6 @@ register_interrupts:
 
 ; Handles 0x21 interrupts.
 ; TODO: use <dec> to possibly optimise this?
-; TODO: optimise this as so many branches negatively affect the cpu's look-ahead
 ; Refer to https://grandidierite.github.io/dos-interrupts/ for details.
 int21h_handler:
   ; <ah> = 0x01
@@ -133,7 +131,7 @@ int21h_handler:
       pop bx
       jmp .exit
 
-      ; Null-checked, as we shouldn"t be able to print <NULL> normally
+      ; Null-checked, as we shouldn't be able to print <NULL> normally
       .str_print:
         cmp dl, 0
         jne .print
@@ -158,7 +156,10 @@ int21h_handler:
 ; TODO: <ctrl-c> and <ctrl-break> handler
 ; TODO: in newline, backspace shouldnt remove previous word but move to previous line
 ; TODO: newline before and after clear
-; TODO: update cursor position
+; TODO: update cursor position without using bios
+; TODO: optimise the cursor position function
+; TODO: backspace moves back only, not erase previous character
+; TODO: cursor disappears on newline multiple times
 ; TODO: optimise it
 ; Parameters:
 ;   - <dl> = char
@@ -167,6 +168,8 @@ int21h_handler:
 putc:
   ; Save registers
   push ax
+  push bx
+  push cx
   push dx
   push es
   push di
@@ -192,18 +195,41 @@ putc:
     ; Save the new memory address back into the video memory offset
     mov [ADR_VIDMEM_OFF], di
 
-  ; Restore the register state and exit
   .exit:
+    ; Update the cursor positon
+    mov ax, di
+    mov cl, 80
+    div cl
+    push ax
+    mov al, ah
+    xor ah, ah
+    mov cl, 2
+    div cl
+    mov ah, al
+    mov dl, ah
+
+    pop ax
+    xor ah, ah
+    div cl
+    mov dh, al
+
+    mov ah, 0x02
+    xor bx, bx
+    int 0x10
+
+    ; Restore the register state and exit
     pop di
     pop es
     pop dx
+    pop cx
+    pop bx
     pop ax
     ret
 
   ; Handle backspace
   ; TODO: optimise this (i dont like the sub first then adding 2 to check value)
   .handle_back:
-    ; If the previous character was <NULL>, then go back until it isn"t
+    ; If the previous character was <NULL>, then go back until it isn't
     .back_loop:
       sub di, 2
       cmp byte [es:di], 0
@@ -239,7 +265,6 @@ putc:
     jmp .exit
 
   ; ; Handle line feed
-  ; ; TODO: split it into handling CR/LF
   ; ; TODO: IMPLEMENT THIS
   ; .handle_lf:
   ;   ; Save registers for calculation
@@ -263,40 +288,6 @@ putc:
   ;   pop ax
   ;   jmp .exit
 
-
-
-
-
-; this is a keyboard isr i should install instead of treating it as a driver unique to dos" int 0x21. with the dos method, im liable to miss keyboard inputs when im not listening for them. if i make my own keyboard buffer, then i will be able to store and retrieve keys on demand, basically, like how linuxtty works. the keyboard will always be working without relying on whether the program wants input or not.
-
-
-; Print out a character to the next address in video memory
-; TODO: <ctrl-c> and <ctrl-break> handler
-; Parameters:
-;   - NULL
-; Returns:
-;   - <al> = character read
-getch:
-  push ax
-  push bx
-
-  mov word di, BUF_KEYBOARD
-  add di, [PTR_KEYBOARD]
-
-  mov bx, SCANCODE_MAP
-
-  in al, 0x60
-  xlatb
-  mov byte [es:di], al
-  inc byte [PTR_KEYBOARD]
-
-  mov al, 0x20
-  out 0x20, al
-
-  pop bx
-  pop ax
-  iret
-
 ; Preprocessors
 STR_END         equ "$"     ; The default string terminator in MS-DOS
 KEY_BACK        equ 0x08
@@ -311,48 +302,4 @@ ADR_VIDMEM_OFF dw 0x0000
 TTY_ATT     db 0x07    ; 0x07 is the MS-DOS default character format
 TTY_MAXCOL  db 80 * 2  ; 2 bytes per character
 TTY_MAXROW  db 25
-
-; Keyboard buffer
-SIZE_KEYBOARD equ 128
-BUF_KEYBOARD: times SIZE_KEYBOARD db 0
-PTR_KEYBOARD dw BUF_KEYBOARD
-
-SCANCODE_MAP:
-  db  0,  27, "1", "2", "3", "4", "5", "6", "7", "8"    ; 9
-  db "9", "0", "-", "=", 0x08                           ; Backspace
-  db 0x09                                               ; Tab
-  db "q", "w", "e", "r"                                 ; 19
-  db "t", "y", "u", "i", "o", "p", "[", "]", 0x0a       ; Enter key
-  db 0                                                  ; 29   - Control
-  db "a", "s", "d", "f", "g", "h", "j", "k", "l", ";"   ; 39
-  db "'", "`", 0                                        ; Left shift
-  ; db "\", "z", "x", "c", "v", "b", "n"                  ; 49
-  db "0", "z", "x", "c", "v", "b", "n"                  ; 49
-  db "m", ",", ".", "/", 0                              ; Right shift
-  db "*"
-  db 0                                                  ; Alt
-  db " "                                                ; Space bar
-  db 0                                                  ; Caps lock
-  db 0                                                  ; 59 - F1 key ... >
-  db 0,   0,   0,   0,   0,   0,   0,   0
-  db 0                                                  ; < ... F10
-  db 0                                                  ; 69 - Num lock
-  db 0                                                  ; Scroll Lock
-  db 0                                                  ; Home key
-  db 0                                                  ; Up Arrow
-  db 0                                                  ; Page Up
-  db "-"
-  db 0                                                  ; Left Arrow
-  db 0
-  db 0                                                  ; Right Arrow
-  db "+"
-  db 0                                                  ; 79 - End key
-  db 0                                                  ; Down Arrow
-  db 0                                                  ; Page Down
-  db 0                                                  ; Insert Key
-  db 0                                                  ; Delete Key
-  db 0,   0,   0
-  db 0                                                  ; F11 Key
-  db 0                                                  ; F12 Key
-  times 128 - ($-SCANCODE_MAP) db 0                     ; All other keys are undefined
 
