@@ -60,17 +60,22 @@ int21h_handler:
   ; <ah> = 0x01
   ; Character output with echo
   cmp ah, 0x01
-  je .echo_ch_in
+  je .h_01h
 
   ; <ah> = 0x02
   ; Character output
   cmp ah, 0x02
-  je .ch_out
+  je .h_02h
+
+  ; <ah> = 0x07
+  ; Character output without echo
+  cmp ah, 0x07
+  je .h_07h
 
   ; <ah> = 0x09
   ; Character string output (terminated by `$`)
   cmp ah, 0x09
-  je .str_out
+  je .h_09h
 
   ; If the interrupt is not in the specified format, just exit.
   ; TODO: Actually incorporate an error handler here. (maybe?)
@@ -82,7 +87,7 @@ int21h_handler:
   ;   - NULL
   ; Returns:
   ;   - <al> = character read
-  .echo_ch_in:
+  .h_01h:
     push ax
     push dx
 
@@ -110,11 +115,22 @@ int21h_handler:
   ;   - <dl> = char
   ; Returns:
   ;   - NULL (registers preserved)
-  .ch_out:
+  .h_02h:
     ; Split out this function so other interrupts can also call it.
     call putc
     call update_cursorpos
     jmp .exit
+
+  ; Input a character from the keyboard without echoing it.
+  ; Parameters:
+  ;   - NULL
+  ; Returns:
+  ;   - <al> = character read
+  .h_07h:
+    xor ax, ax
+    int 0x16
+    mov ah, 0x07  ; Hack in the <ah> restore
+    je .exit
 
   ; Print out a string to the next address in video memory terminated by `$`
   ; or null-terminated.
@@ -123,7 +139,7 @@ int21h_handler:
   ;   - <ds:bx> = pointer to string
   ; Returns:
   ;   - NULL (registers preserved)
-  .str_out:
+  .h_09h:
     ; Save registers
     push bx
     push dx
@@ -234,10 +250,8 @@ putc:
     ; Save the new memory address back into the video memory offset
     mov [ADR_VIDMEM_OFF], di
 
+  ; Restore the register state and exit
   .exit:
-    ; call 
-
-    ; Restore the register state and exit
     pop di
     pop es
     pop dx

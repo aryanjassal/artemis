@@ -6,15 +6,6 @@ _start:
   ; Reigster interrupts immediately
   call register_interrupts
 
-  ; ; Test int 0x21 service 0x02 (char_out)
-  ; mov ah, 0x02
-  ; mov dl, "X"
-  ; int 0x21
-  ; mov dl, "Y"
-  ; int 0x21
-  ; mov dl, "Z"
-  ; int 0x21
-
   ; Test int 0x21 service 0x09 (str_out)
   mov bx, MSG_GREET
   mov ah, 0x09
@@ -31,10 +22,10 @@ _start:
   hlt
 
 ; Include the dos interrupts
-%include "dos_int.asm"
+%include "interrupts.asm"
 
 ; Strings ($-terminated or null-terminated)
-MSG_GREET db "Welcome to Artemis v0.0.5 (formerly DOS2B)", 0x0d, "$"
+MSG_GREET db "Welcome to DOS2B v0.0.5 (eventually Artemis)", 0x0d, "$"
 
 ; Variable declarations
 BOOT_DRIVE db 0
