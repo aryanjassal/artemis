@@ -77,7 +77,6 @@ int21h_handler:
   jmp .exit
 
   ; Print out a character to the next address in video memory
-  ; TODO: <ctrl-c> and <ctrl-break> handler
   ; TODO: clean up, document, and optimise this
   ; Parameters:
   ;   - NULL
@@ -107,7 +106,6 @@ int21h_handler:
     jmp .exit
 
   ; Print out a character to the next address in video memory
-  ; TODO: <ctrl-c> and <ctrl-break> handler
   ; Parameters:
   ;   - <dl> = char
   ; Returns:
@@ -120,7 +118,6 @@ int21h_handler:
 
   ; Print out a string to the next address in video memory terminated by `$`
   ; or null-terminated.
-  ; TODO: <ctrl-c> and <ctrl-break> handler
   ; TODO: optimise this
   ; Parameters:
   ;   - <ds:bx> = pointer to string
@@ -133,27 +130,24 @@ int21h_handler:
 
     ; Main print loop
     .str_loop:
-      ; Check for termination character.
+      ; Check for termination characters.
       mov dl, [ds:bx]
       cmp dl, STR_END
-      jne .str_print
+      je .str_exit
+      cmp dl, 0
+      je .str_exit
+
+      call putc
+      inc bx
+      jmp .str_loop
 
       ; If it is the termination character, then exit
-      pop dx
-      pop bx
-      call update_cursorpos
-      jmp .exit
-
-      ; Null-checked, as we shouldn't be able to print <NULL> normally
-      .str_print:
-        cmp dl, 0
-        jne .print
+      .str_exit:
+        pop dx
+        pop bx
         call update_cursorpos
         jmp .exit
-        .print:
-          call putc
-          inc bx
-          jmp .str_loop
+
   
   ; Note: Pop all registers before exiting
   .exit:
@@ -166,59 +160,45 @@ int21h_handler:
     ; Return from interrupt
     iret
 
-; TODO: document this properly
+; Updates the cursor position on the screen.
+; TODO: allow for using custom values too
+; Parameters:
+;   - NULL
+; Returns:
+;   - NULL (registers preserved)
 update_cursorpos:
-  ; ; Change adress from byte-based to character-based. In other words, instead
-  ; ; of calculating based on 2 bytes per character (which is what is stored
-  ; ; in <di>), we divide that by two to get the index of each character within
-  ; ; the video memory.
-  ; mov ax, [ADR_VIDMEM_OFF]
-  ; mov cl, 1
-  ; shr ax, cl
-
-
+  ; Change adress from byte-based to character-based. In other words, instead
+  ; of calculating based on 2 bytes per character (which is what is stored
+  ; in <di>), we divide that by two to get the index of each character within
+  ; the video memory.
   mov bx, [ADR_VIDMEM_OFF]
   mov cl, 1
   shr bx, cl
 
-  ; ; Divide by the number of colums to get the number of row (quotient) and
-  ; ; the number of column (remainder) to move the cursor to.
-  ; mov cl, 80
-  ; div cl
-  ; mov dh, al
-  ; mov dl, ah
-  ;
-  ; mov bx, ax
-
-  ; ; Call the interrupt to set the cursor position
-  ; ; TODO: as previously mentioned, use hardware instead of this
-  ; mov ah, 0x02
-  ; xor bx, bx
-  ; int 0x10
-
+  ; Prepare to send the row number of cursor position
   mov dx, 0x03d4
   mov al, 0x0f
   out dx, al
 
+  ; Send the row number of cursor position
   inc dl
   mov al, bl
   out dx, al
 
+  ; Prepare to send the column number of cursor position
   dec dl
   mov al, 0x0e 
   out dx, al
 
+  ; Send the column number of cursor position
   inc dl
   mov al, bh
   out dx, al
+
+  ; This is a function, so return from this
   ret
 
 ; Print out a character to the next address in video memory
-; TODO: <ctrl-c> and <ctrl-break> handler
-; TODO: newline before and after clear
-; TODO: update cursor position without using bios
-; TODO: null termination doesn't allow for keyboard input
-; TODO: optimise the cursor position function
 ; TODO: optimise it
 ; Parameters:
 ;   - <dl> = char
