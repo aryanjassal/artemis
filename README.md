@@ -8,7 +8,7 @@ DOS2B is an operating system inspired by the popular MS-DOS. DOS2B is completely
 
 ## Usage
 
-### Building and running
+### Building And Running
 
 To run DOS2B, ensure `qemu`, `nasm`, and `gcc` are installed. And, yes, I prefer Intel syntax over AT&T. Get over it. To run DOS2B, type the following in the terminal to compile and run the operating system on QEMU. 
 
@@ -45,7 +45,7 @@ $ make clean
 
 You might have noticed that there is a `tools` directory. It houses code for testing complex algorithms in a simpler development environment like C. I know C isn't really known for being simple, but when you've been coding in assembly for weeks on end, even C feels like Python.
 
-### tools/fat
+### FAT12 Driver
 
 The `tools/fat` directory contains FAT12 drivers in C, so the driver can be debugged in a more readable syntax. It also supports FAT16 as it only requires changing two lines. The lines to change are well documented within the file itself. However, keep in mind that FAT16 isn't fully supported yet (as DOS2B uses FAT12).
 
