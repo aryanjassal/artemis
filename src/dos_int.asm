@@ -52,7 +52,8 @@ register_interrupts:
   pop ax
   ret
 
-; Handles 0x21 interrupts.
+; Handles 0x21 interrupts. 0x21 interrupts are reserved by DOS, so this
+; handler essentially emulates DOS behaviour.
 ; TODO: use <dec> to possibly optimise this?
 ; Refer to https://grandidierite.github.io/dos-interrupts/ for details.
 int21h_handler:
@@ -108,6 +109,7 @@ int21h_handler:
     jmp .exit
 
   ; Print out a string to the next address in video memory terminated by `$`
+  ; or null-terminated.
   ; TODO: <ctrl-c> and <ctrl-break> handler
   ; TODO: optimise this
   ; Parameters:
@@ -134,8 +136,7 @@ int21h_handler:
       ; Null-checked, as we shouldn't be able to print <NULL> normally
       .str_print:
         cmp dl, 0
-        jne .print
-        mov dl, "?"
+        je .exit
         .print:
           call putc
           inc bx
@@ -152,14 +153,21 @@ int21h_handler:
     ; Return from interrupt
     iret
 
+; Interrupt 0x42 handler. This is the interrupt vector for the Artemis OS 
+; intended for use by programs. 0x42 is chosen as the interrupt vector of
+; choice as 42 is the meaning of all life. And yes, I know that 0x42 does
+; not equal 42 in base 10, but I don't care. Too late now anyways.
+artemis_user_interrupt_handler:
+  ; NOTE: add handler for clear screen
+  ; NOTE: add handler for changing attribute of all screen text
+  iret
+
 ; Print out a character to the next address in video memory
 ; TODO: <ctrl-c> and <ctrl-break> handler
-; TODO: in newline, backspace shouldnt remove previous word but move to previous line
 ; TODO: newline before and after clear
 ; TODO: update cursor position without using bios
+; TODO: null termination doesn't allow for keyboard input
 ; TODO: optimise the cursor position function
-; TODO: backspace moves back only, not erase previous character
-; TODO: cursor disappears on newline multiple times
 ; TODO: optimise it
 ; Parameters:
 ;   - <dl> = char
@@ -196,23 +204,23 @@ putc:
     mov [ADR_VIDMEM_OFF], di
 
   .exit:
-    ; Update the cursor positon
+    ; Change adress from byte-based to character-based. In other words, instead
+    ; of calculating based on 2 bytes per character (which is what is stored
+    ; in <di>), we divide that by two to get the index of each character within
+    ; the video memory.
     mov ax, di
+    mov cl, 1
+    shr ax, cl
+
+    ; Divide by the number of colums to get the number of row (quotient) and
+    ; the number of column (remainder) to move the cursor to.
     mov cl, 80
     div cl
-    push ax
-    mov al, ah
-    xor ah, ah
-    mov cl, 2
-    div cl
-    mov ah, al
+    mov dh, al
     mov dl, ah
 
-    pop ax
-    xor ah, ah
-    div cl
-    mov dh, al
-
+    ; Call the interrupt to set the cursor position
+    ; TODO: as previously mentioned, use hardware instead of this
     mov ah, 0x02
     xor bx, bx
     int 0x10
@@ -235,8 +243,8 @@ putc:
       cmp byte [es:di], 0
       je .back_loop
 
-    ; If the previous character was not <NULL>, then erase it
-    mov byte [es:di], 0
+    ; ; If the previous character was not <NULL>, then erase it
+    ; mov byte [es:di], 0
     mov [ADR_VIDMEM_OFF], di
     jmp .exit
 
@@ -247,16 +255,29 @@ putc:
     push ax
     push cx
 
-    ; Calculate the offset to the next line
+    ; Change adress from byte-based to character-based. In other words, instead
+    ; of calculating based on 2 bytes per character (which is what is stored
+    ; in <di>), we divide that by two to get the index of each character within
+    ; the video memory.
     mov ax, di
-    div byte [TTY_MAXCOL]
-    xor cx, cx
+    mov cl, 1
+    shr ax, cl
+
+    ; Calculate the offset to the next line
+    xor ch, ch
     mov cl, [TTY_MAXCOL]
+
+    div cl
     sub cl, ah
 
     ; Fill all the byes with null value
-    xor ax, ax
-    rep stosb
+    dec cl
+    mov ah, [TTY_ATT]
+    mov al, " "
+    stosw
+
+    xor al, al
+    rep stosw
     mov [ADR_VIDMEM_OFF], di
 
     ; Restore the state of the registers
@@ -264,29 +285,7 @@ putc:
     pop ax
     jmp .exit
 
-  ; ; Handle line feed
-  ; ; TODO: IMPLEMENT THIS
-  ; .handle_lf:
-  ;   ; Save registers for calculation
-  ;   push ax
-  ;   push cx
-  ;
-  ;   ; Calculate the offset to the next line
-  ;   mov ax, di
-  ;   div byte [TTY_MAXCOL]
-  ;   xor cx, cx
-  ;   mov cl, [TTY_MAXCOL]
-  ;   sub cl, ah
-  ;
-  ;   ; Fill all the byes with null value
-  ;   xor ax, ax
-  ;   rep stosb
-  ;   mov [ADR_VIDMEM_OFF], di
-  ;
-  ;   ; Restore the state of the registers
-  ;   pop cx
-  ;   pop ax
-  ;   jmp .exit
+  ; TODO: handle line feed
 
 ; Preprocessors
 STR_END         equ "$"     ; The default string terminator in MS-DOS
@@ -295,11 +294,11 @@ KEY_CR          equ 0x0d
 KEY_LF          equ 0x0a
 
 ; Memory addresses
-ADR_VIDMEM_SEG dw 0xb800
-ADR_VIDMEM_OFF dw 0x0000
+ADR_VIDMEM_SEG  dw 0xb800
+ADR_VIDMEM_OFF  dw 0x0000
 
 ; Variables
-TTY_ATT     db 0x07    ; 0x07 is the MS-DOS default character format
-TTY_MAXCOL  db 80 * 2  ; 2 bytes per character
-TTY_MAXROW  db 25
+TTY_ATT         db 0x1f     ; 0x07 is the MS-DOS default character format
+TTY_MAXCOL      db 80       ; Needs to be in memory as operations like <div> and things
+TTY_MAXROW      db 25       ; don't work well with <equ> preprocessors.
 
