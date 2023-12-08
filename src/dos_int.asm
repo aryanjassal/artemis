@@ -89,12 +89,21 @@ int21h_handler:
 
     xor ax, ax
     int 0x16
+    
+    ; NOTE: DEBUG: for testing only
+    cmp al, 0x1b
+    jne .ignore
+    jmp 0xffff:0x0000
+    .ignore:
+    ; -----------------------------
+
     mov dl, al
     call putc
     
     pop dx
     pop ax
 
+    call update_cursorpos
     jmp .exit
 
   ; Print out a character to the next address in video memory
@@ -106,6 +115,7 @@ int21h_handler:
   .ch_out:
     ; Split out this function so other interrupts can also call it.
     call putc
+    call update_cursorpos
     jmp .exit
 
   ; Print out a string to the next address in video memory terminated by `$`
@@ -131,17 +141,20 @@ int21h_handler:
       ; If it is the termination character, then exit
       pop dx
       pop bx
+      call update_cursorpos
       jmp .exit
 
       ; Null-checked, as we shouldn't be able to print <NULL> normally
       .str_print:
         cmp dl, 0
-        je .exit
+        jne .print
+        call update_cursorpos
+        jmp .exit
         .print:
           call putc
           inc bx
           jmp .str_loop
-
+  
   ; Note: Pop all registers before exiting
   .exit:
     ; Send End Of Interrupt (EOI) to Master PIC
@@ -153,14 +166,52 @@ int21h_handler:
     ; Return from interrupt
     iret
 
-; Interrupt 0x42 handler. This is the interrupt vector for the Artemis OS 
-; intended for use by programs. 0x42 is chosen as the interrupt vector of
-; choice as 42 is the meaning of all life. And yes, I know that 0x42 does
-; not equal 42 in base 10, but I don't care. Too late now anyways.
-artemis_user_interrupt_handler:
-  ; NOTE: add handler for clear screen
-  ; NOTE: add handler for changing attribute of all screen text
-  iret
+; TODO: document this properly
+update_cursorpos:
+  ; ; Change adress from byte-based to character-based. In other words, instead
+  ; ; of calculating based on 2 bytes per character (which is what is stored
+  ; ; in <di>), we divide that by two to get the index of each character within
+  ; ; the video memory.
+  ; mov ax, [ADR_VIDMEM_OFF]
+  ; mov cl, 1
+  ; shr ax, cl
+
+
+  mov bx, [ADR_VIDMEM_OFF]
+  mov cl, 1
+  shr bx, cl
+
+  ; ; Divide by the number of colums to get the number of row (quotient) and
+  ; ; the number of column (remainder) to move the cursor to.
+  ; mov cl, 80
+  ; div cl
+  ; mov dh, al
+  ; mov dl, ah
+  ;
+  ; mov bx, ax
+
+  ; ; Call the interrupt to set the cursor position
+  ; ; TODO: as previously mentioned, use hardware instead of this
+  ; mov ah, 0x02
+  ; xor bx, bx
+  ; int 0x10
+
+  mov dx, 0x03d4
+  mov al, 0x0f
+  out dx, al
+
+  inc dl
+  mov al, bl
+  out dx, al
+
+  dec dl
+  mov al, 0x0e 
+  out dx, al
+
+  inc dl
+  mov al, bh
+  out dx, al
+  ret
 
 ; Print out a character to the next address in video memory
 ; TODO: <ctrl-c> and <ctrl-break> handler
@@ -204,26 +255,7 @@ putc:
     mov [ADR_VIDMEM_OFF], di
 
   .exit:
-    ; Change adress from byte-based to character-based. In other words, instead
-    ; of calculating based on 2 bytes per character (which is what is stored
-    ; in <di>), we divide that by two to get the index of each character within
-    ; the video memory.
-    mov ax, di
-    mov cl, 1
-    shr ax, cl
-
-    ; Divide by the number of colums to get the number of row (quotient) and
-    ; the number of column (remainder) to move the cursor to.
-    mov cl, 80
-    div cl
-    mov dh, al
-    mov dl, ah
-
-    ; Call the interrupt to set the cursor position
-    ; TODO: as previously mentioned, use hardware instead of this
-    mov ah, 0x02
-    xor bx, bx
-    int 0x10
+    ; call 
 
     ; Restore the register state and exit
     pop di
@@ -243,13 +275,12 @@ putc:
       cmp byte [es:di], 0
       je .back_loop
 
-    ; ; If the previous character was not <NULL>, then erase it
-    ; mov byte [es:di], 0
+    ; Save the new video address to memory and exit
     mov [ADR_VIDMEM_OFF], di
     jmp .exit
 
   ; Handle carriage return
-  ; TODO: split it into handling CR/LF
+  ; TODO: split it into handling CR/LF. this needs custom keyboard handler
   .handle_cr:
     ; Save registers for calculation
     push ax
@@ -270,12 +301,15 @@ putc:
     div cl
     sub cl, ah
 
-    ; Fill all the byes with null value
+    ; Append a <space> character before going to a newline, as this is what will allow
+    ; backspace to return to the previous line instead of removing the last character
+    ; from it.
     dec cl
     mov ah, [TTY_ATT]
     mov al, " "
     stosw
 
+    ; Fill all the byes with null value
     xor al, al
     rep stosw
     mov [ADR_VIDMEM_OFF], di

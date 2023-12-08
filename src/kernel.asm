@@ -19,7 +19,6 @@ _start:
   mov bx, MSG_GREET
   mov ah, 0x09
   int 0x21
-  ; int 0x21
 
   ; Test int 0x21 service 0x01 (kb_in)
   mov ah, 0x01
@@ -27,7 +26,7 @@ _start:
     int 0x21
     jmp .loop
 
-  ; Just halt here because there is nothing else to do
+  ; Halt here because there is nothing else to do
   cli
   hlt
 
