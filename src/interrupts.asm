@@ -5,8 +5,8 @@
 
 BITS 16
 
-; Modifying IVT 0x21, with each entry being 4 bytes long.
-DOS_IVT_OFFSET equ 0x21 * 4
+; Modifying IVT 0x42, with each entry being 4 bytes long.
+DOS_IVT_OFFSET equ 0x42 * 4
 
 ; Registers all the interrupt handlers in the Interrupt Vector Table.
 ; @param  None
@@ -21,7 +21,7 @@ register_interrupts:
   ; Load the address of the interrupt handler before <ds> is changed.
   ; <ds> has the address of the current segment, which can then be used for
   ; calculating the absolute address.
-  mov bx, int21h_handler
+  mov bx, int42h_handler
   mov ax, ds
   mov cl, 4
   shl ax, cl
@@ -50,10 +50,10 @@ register_interrupts:
   pop ax
   ret
 
-; Handles 0x21 interrupts. 0x21 interrupts are reserved by DOS, so this
-; handler essentially emulates DOS behaviour.
-; Refer to https://grandidierite.github.io/dos-interrupts/ for details.
-int21h_handler:
+; Handles 0x42 interrupts.
+; TODO: document this better
+; TODO: remake the interrupts list
+int42h_handler:
   ; <ah> = 0x01
   ; Character output with echo
   cmp ah, 0x01
