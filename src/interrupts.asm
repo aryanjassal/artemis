@@ -9,10 +9,8 @@ BITS 16
 DOS_IVT_OFFSET equ 0x21 * 4
 
 ; Registers all the interrupt handlers in the Interrupt Vector Table.
-; Parameters:
-;   - NULL
-; Returns:
-;   - NULL (registers preserved)
+; @param  None
+; @return None
 register_interrupts:
   ; Save registers being modified.
   push ax
@@ -38,7 +36,7 @@ register_interrupts:
   
   ; The format of an entry in the IVT follows <segment:offset> formatting.
   ; Thus, the first two bytes are used for the offset, and the last two for the
-  ; segment. The IVT spans 0x0000:0x0000 to 0x0000:0x03ff.
+  ; segment. The IVT spans from 0x0000:0x0000 to 0x0000:0x03ff.
   mov word [DOS_IVT_OFFSET], bx
   mov word [DOS_IVT_OFFSET + 2], ds
 
@@ -54,7 +52,6 @@ register_interrupts:
 
 ; Handles 0x21 interrupts. 0x21 interrupts are reserved by DOS, so this
 ; handler essentially emulates DOS behaviour.
-; TODO: use <dec> to possibly optimise this?
 ; Refer to https://grandidierite.github.io/dos-interrupts/ for details.
 int21h_handler:
   ; <ah> = 0x01
@@ -73,20 +70,18 @@ int21h_handler:
   je .h_07h
 
   ; <ah> = 0x09
-  ; Character string output (terminated by `$`)
+  ; Character string output
   cmp ah, 0x09
   je .h_09h
 
   ; If the interrupt is not in the specified format, just exit.
-  ; TODO: Actually incorporate an error handler here. (maybe?)
+  stc
   jmp .exit
 
-  ; Print out a character to the next address in video memory
-  ; TODO: clean up, document, and optimise this
-  ; Parameters:
-  ;   - NULL
-  ; Returns:
-  ;   - <al> = character read
+  ; Input a character from the user and output it to the next memory address
+  ; TODO: optimise this
+  ; @param  None
+  ; @return `al` Character read
   .h_01h:
     push ax
     push dx
@@ -94,12 +89,14 @@ int21h_handler:
     xor ax, ax
     int 0x16
     
+    ; ------------------------------
     ; NOTE: DEBUG: for testing only
+    ; ------------------------------
     cmp al, 0x1b
     jne .ignore
     jmp 0xffff:0x0000
     .ignore:
-    ; -----------------------------
+    ; ------------------------------
 
     mov dl, al
     call putc
@@ -111,10 +108,8 @@ int21h_handler:
     jmp .exit
 
   ; Print out a character to the next address in video memory
-  ; Parameters:
-  ;   - <dl> = char
-  ; Returns:
-  ;   - NULL (registers preserved)
+  ; @param  `dl` Character to output
+  ; @return None
   .h_02h:
     ; Split out this function so other interrupts can also call it.
     call putc
@@ -122,10 +117,8 @@ int21h_handler:
     jmp .exit
 
   ; Input a character from the keyboard without echoing it.
-  ; Parameters:
-  ;   - NULL
-  ; Returns:
-  ;   - <al> = character read
+  ; @param  None
+  ; @return `al` Character read
   .h_07h:
     xor ax, ax
     int 0x16
@@ -135,10 +128,8 @@ int21h_handler:
   ; Print out a string to the next address in video memory terminated by `$`
   ; or null-terminated.
   ; TODO: optimise this
-  ; Parameters:
-  ;   - <ds:bx> = pointer to string
-  ; Returns:
-  ;   - NULL (registers preserved)
+  ; @param  `ds:bx` Pointer to string
+  ; @return None
   .h_09h:
     ; Save registers
     push bx
@@ -148,8 +139,6 @@ int21h_handler:
     .str_loop:
       ; Check for termination characters.
       mov dl, [ds:bx]
-      cmp dl, STR_END
-      je .str_exit
       cmp dl, 0
       je .str_exit
 
@@ -164,8 +153,7 @@ int21h_handler:
         call update_cursorpos
         jmp .exit
 
-  
-  ; Note: Pop all registers before exiting
+  ; Note: Pop all registers prior to exiting
   .exit:
     ; Send End Of Interrupt (EOI) to Master PIC
     push ax
@@ -176,12 +164,18 @@ int21h_handler:
     ; Return from interrupt
     iret
 
+; Reads disk starting with the given LBA to specified number of sectors.
+; @param  `ax`    Logical block address (LBA) of sector
+; @param  `cl`    Number of sectors to read
+; @return `es:di` The address of buffer to put in data to
+; TODO: actually implement this
+disk_read:
+  ret
+
 ; Updates the cursor position on the screen.
 ; TODO: allow for using custom values too
-; Parameters:
-;   - NULL
-; Returns:
-;   - NULL (registers preserved)
+; @param  None
+; @return None
 update_cursorpos:
   ; Change adress from byte-based to character-based. In other words, instead
   ; of calculating based on 2 bytes per character (which is what is stored
@@ -216,10 +210,8 @@ update_cursorpos:
 
 ; Print out a character to the next address in video memory
 ; TODO: optimise it
-; Parameters:
-;   - <dl> = char
-; Returns:
-;   - NULL (registers preserved)
+; @param  `dl` Character to output
+; @return None
 putc:
   ; Save registers
   push ax
@@ -316,7 +308,6 @@ putc:
   ; TODO: handle line feed
 
 ; Preprocessors
-STR_END         equ "$"     ; The default string terminator in MS-DOS
 KEY_BACK        equ 0x08
 KEY_CR          equ 0x0d
 KEY_LF          equ 0x0a
@@ -326,7 +317,7 @@ ADR_VIDMEM_SEG  dw 0xb800
 ADR_VIDMEM_OFF  dw 0x0000
 
 ; Variables
-TTY_ATT         db 0x1f     ; 0x07 is the MS-DOS default character format
-TTY_MAXCOL      db 80       ; Needs to be in memory as operations like <div> and things
-TTY_MAXROW      db 25       ; don't work well with <equ> preprocessors.
+TTY_ATT         db 0x1f     ; 0x07 is the BIOS default terminal attribute format
+TTY_MAXCOL      db 80
+TTY_MAXROW      db 25
 

@@ -1,16 +1,18 @@
-# DOS2B
+# Artemis
 
 Do we *really* need more than 16 bits?
 
 ## Overview
 
-DOS2B is an operating system inspired by the popular MS-DOS. DOS2B is completely written in 8086 assembly from scratch. What would happen if MS-DOS was programmed with modern programming practices? How much better could we make it now? Well, you don't have to wonder, because DOS2B aims to do precisely that. Moreover, eventually, you will be able to run native DOS applications on this too. How exciting is that? Basically like any DOS emulator, but acutally a disk operating system. As a matter of fact, DOS2B should work on live 8086 hardware too, so feel free to try!
+Artemis is an operating system inspired by the popular MS-DOS, completely written in 8086 assembly from scratch. The aim of Artemis is primarily for learning system programming. I have tried to ensure everything is well-documented, so the codebase is easy to follow and maintain. I will keep working on Artemis to see how far can I stretch functionality within the limited performance and hardware capabilities of 8086 processors. Of course, Artemis isn't meant to be run only on emulators. I am trying to make Artemis compatible with live hardware too. As I am using 8086 assembly, Artemis should work perfectly on actual 8086 hardware too. 
+
+Best code is written under the harshest development environments. Wanna code better? Lets bring the harsh environment back.
 
 ## Usage
 
 ### Building And Running
 
-To run DOS2B, ensure `qemu`, `nasm`, and `gcc` are installed. And, yes, I prefer Intel syntax over AT&T. Get over it. To run DOS2B, type the following in the terminal to compile and run the operating system on QEMU. 
+To run Artemis, ensure `qemu`, `nasm`, and `gcc` are installed. And, yes, I prefer Intel syntax over AT&T. Get over it. To run Artemis, type the following in the terminal to compile and run the operating system on QEMU. 
 
 ```bash
 $ make
@@ -47,10 +49,8 @@ You might have noticed that there is a `tools` directory. It houses code for tes
 
 ### FAT12 Driver
 
-The `tools/fat` directory contains FAT12 drivers in C, so the driver can be debugged in a more readable syntax. It also supports FAT16 as it only requires changing two lines. The lines to change are well documented within the file itself. However, keep in mind that FAT16 isn't fully supported yet (as DOS2B uses FAT12).
+The `tools/fat` directory contains FAT12 drivers in C, so the driver can be debugged in a more readable syntax. It also supports FAT16 as it only requires changing two lines. The lines to change are well documented within the file itself. However, keep in mind that FAT16 isn't fully supported yet (as Artemis uses FAT12).
 
 ## Notes
-
-As DOS2B is inspired by MS-DOS, it also uses DOS's interrupt 0x21 exactly the same way as MS-DOS uses. Thus, you will be able to run basically any DOS-era application using DOS2B.
 
 By default, if you're using QEMU, it also creates a file `qemu.log` with the assembly the virtual machine is running. It is extremely useful tool for debugging. Well, sometimes.

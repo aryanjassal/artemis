@@ -24,8 +24,8 @@ _start:
 ; Include the dos interrupts
 %include "interrupts.asm"
 
-; Strings ($-terminated or null-terminated)
-MSG_GREET db "Welcome to DOS2B v0.0.5 (eventually Artemis)", 0x0d, "$"
+; Strings (null-terminated)
+MSG_GREET db "Welcome to DOS2B v0.0.5 (eventually Artemis)", 0x0d, 0
 
 ; Variable declarations
 BOOT_DRIVE db 0
