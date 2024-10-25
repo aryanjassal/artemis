@@ -9,7 +9,7 @@ jmp code
 nop
 
 ; BIOS Parameter Block
-OEM_IDENTIFIER            db "DOS2B V1"
+OEM_IDENTIFIER            db "ARTEMIS "
 BYTES_PER_SECTOR          dw 512
 SECTORS_PER_CLUSTER       db 1
 RESERVED_SECTORS          dw 1
@@ -28,7 +28,7 @@ BOOT_DRIVE_NUMBER         db 0
 RESERVED                  db 0
 SIGNATURE                 db 0x29
 VOLUME_ID                 db 0x12, 0x34, 0x56, 0x78
-VOLUME_LABEL              db "DOS2B      "
+VOLUME_LABEL              db "ARTEMISROOT"
 SYSTEM_ID                 db "FAT12   "
 
 ; Bootable code starts here
@@ -246,6 +246,8 @@ post_jump:
     jmp KERN_SEGMENT:KERN_OFFSET
 
     ; Should never happen
+    mov si, DBG_NEVER
+    puts
     cli
     hlt
 
@@ -381,6 +383,7 @@ ERR_FLOPPY db "[ERR] read fail", ENDL, 0
 ERR_NO_KERN db "[ERR] kernel not found", ENDL, 0
 
 DBG_BOOTING db "booting...", ENDL, 0
+DBG_NEVER db "[ERR] NEVER", ENDL, 0
 
 ; The current kernel cluster being pointed to
 KERN_CLUSTER dw 0

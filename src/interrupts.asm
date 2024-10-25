@@ -148,7 +148,7 @@ int42h_handler:
         call update_cursorpos
         jmp .exit
 
-  ; Note: Pop all registers prior to exiting
+  ; NOTE: Pop all registers prior to exiting
   .exit:
     ; Send End Of Interrupt (EOI) to Master PIC
     push ax
