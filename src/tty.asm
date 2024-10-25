@@ -81,15 +81,28 @@ putc:
     ret
 
   ; Handle backspace
-  ; TODO: optimise this (i dont like the sub first then adding 2 to check value)
   .handle_back:
+    ; Lower bounds detection, as backspace can cross the lower bounds
+    cmp di, 0x0000
+    jle .exit
+
     ; If the previous character was <NULL>, then go back until it isn't
     .back_loop:
+      ; This loop can also inadvertently cross the lower bounds for video memory
+      cmp di, 0x0000
+      jle .exit
+
+      ; Otherwise, do the regular checks
       sub di, 2
-      cmp byte [es:di], 0
+      cmp byte [es:di], 0x00
       je .back_loop
 
-    ; Save the new video address to memory and exit
+    ; Print a null character where the old character used to be before
+    mov dl, 0x00
+    mov dh, [TTY_ATT]
+    mov word [es:di], dx
+
+    ; Save the new memory address back into the video memory offset
     mov [ADR_VIDMEM_OFF], di
     jmp .exit
 
@@ -105,8 +118,7 @@ putc:
     ; in <di>), we divide that by two to get the index of each character within
     ; the video memory.
     mov ax, di
-    mov cl, 1
-    shr ax, cl
+    shr ax, 1
 
     ; Calculate the offset to the next line
     xor ch, ch
@@ -148,4 +160,3 @@ ADR_VIDMEM_OFF  dw 0x0000
 TTY_ATT         db 0x1f     ; 0x07 is the BIOS default terminal attribute format
 TTY_MAXCOL      db 80
 TTY_MAXROW      db 25
-

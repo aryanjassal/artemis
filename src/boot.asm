@@ -247,7 +247,7 @@ post_jump:
 
     ; Should never happen
     mov si, DBG_NEVER
-    puts
+    call puts
     cli
     hlt
 
