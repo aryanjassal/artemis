@@ -1,0 +1,11 @@
+version = "0.1"
+
+[assemblers]
+nasm = true
+
+[instruction_sets]
+x86 = true
+
+[opts]
+diagnostics = true
+default_diagnostics = true

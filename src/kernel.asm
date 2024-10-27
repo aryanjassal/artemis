@@ -6,6 +6,11 @@ _start:
   ; Reigster interrupts immediately
   call register_interrupts
 
+  ; Clear screen
+  ; TEST: temporary
+  mov ah, 0x08
+  int 0x42
+
   ; Test int 0x21 service 0x09 (str_out)
   mov bx, MSG_GREET
   mov ah, 0x09
@@ -26,7 +31,7 @@ _start:
 
 ; Strings (null-terminated)
 ; 0x0d stands for \n
-MSG_GREET db "Welcome to Artemis v0.0.5", 0x0d, 0x00
+MSG_GREET db "Welcome to Artemis-16 v0.0.5", 0x0d, 0x00
 
 ; Variable declarations
 BOOT_DRIVE db 0

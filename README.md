@@ -1,4 +1,4 @@
-# Artemis
+# Artemis 16
 
 Do we *really* need more than 16 bits?
 
@@ -6,13 +6,13 @@ Do we *really* need more than 16 bits?
 
 Artemis is an operating system inspired by the popular MS-DOS, completely written in 8086 assembly from scratch. The aim of Artemis is primarily for learning system programming. I have tried to ensure everything is well-documented, so the codebase is easy to follow and maintain. I will keep working on Artemis to see how far can I stretch functionality within the limited performance and hardware capabilities of 8086 processors. Of course, Artemis isn't meant to be run only on emulators. I am trying to make Artemis compatible with live hardware too. As I am using 8086 assembly, Artemis should work perfectly on actual 8086 hardware too. 
 
-Best code is written under the harshest development environments. Wanna code better? Lets bring the harsh environment back.
+Code is best optimised when resources are scarce. Want optimised programs? Design them for the lowest-end systems.
 
 ## Usage
 
 ### Building And Running
 
-To run Artemis, ensure `qemu`, `nasm`, and `gcc` are installed. And, yes, I prefer Intel syntax over AT&T. Get over it. To run Artemis, type the following in the terminal to compile and run the operating system on QEMU. 
+To run Artemis, ensure `qemu`, `nasm`, and `gcc` are installed. And, yes, I prefer Intel syntax over AT&T. Bite me. To run Artemis, type the following in the terminal to compile and run the operating system on QEMU. 
 
 ```bash
 $ make
@@ -32,7 +32,7 @@ $ make Q= NO_OUT=
 
 ### Debugging
 
-While we are on the topic of development, every development environment needs a good debugger. Thus, you can use the debug target to launch `bochs` within debug mode. Through the debugger, the instructions can be paused or stepped through, while you have full access to every single register and flag on the emulator. You can also look through memory at an ygiven address, or look at the stack. Amazing tool to debug what's happening.
+While we are on the topic of development, every development environment needs a good debugger. Thus, you can use the debug target to launch `bochs` within debug mode. Through the debugger, the instructions can be paused or stepped through, while you have full access to every single register and flag on the emulator. You can also look through memory at any given address, or look at the stack. Amazing tool to debug what's happening.
 
 ```bash
 $ make debug

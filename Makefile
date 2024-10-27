@@ -31,7 +31,7 @@ ASMFLAGS := -f bin -I $(SRC_DIR)
 GCCFLAGS := -g 
 EMUFLAGS := -drive file=$(FLOPPY_IMG),if=floppy,index=0,media=disk,format=raw -no-reboot -d in_asm >qemu.log 2>&1
 
-.PHONY: all bootloader kernel tools floppy exec clean
+.PHONY: all bootloader kernel tools floppy exec clean $(OBJ_FILES) $(TOOLS_OBJ_FILES)
 
 all: tools floppy exec
 

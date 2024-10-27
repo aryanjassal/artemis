@@ -1,0 +1,15 @@
+[
+  {
+    "arguments": [
+      "/nix/store/lbk30k56awz9vz9qpid93fkjns0xwlhd-gcc-wrapper-13.3.0/bin/gcc",
+      "-c",
+      "-g",
+      "-o",
+      "build/fat/fat-test",
+      "tools/fat/fat-test.c"
+    ],
+    "directory": "/home/aryanj/Projects/artemis",
+    "file": "/home/aryanj/Projects/artemis/tools/fat/fat-test.c",
+    "output": "/home/aryanj/Projects/artemis/build/fat/fat-test"
+  }
+]

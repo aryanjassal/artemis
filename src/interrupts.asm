@@ -1,4 +1,4 @@
-BITS 16
+bits 16
 
 ; Modifying IVT 0x42, with each entry being 4 bytes long.
 ARTEMIS_IVT_OFFSET equ 0x42 * 4
@@ -48,6 +48,8 @@ register_interrupts:
 ; Handles 0x42 interrupts.
 ; TODO: document this better
 ; TODO: remake the interrupts list
+; TODO: this can be optimised so much better. like xors with decrements or loops 
+; and what not
 int42h_handler:
   ; <ah> = 0x01
   ; Character output with echo
@@ -63,6 +65,12 @@ int42h_handler:
   ; Character output without echo
   cmp ah, 0x07
   je .h_07h
+
+  ; <ah> = 0x08
+  ; Clear terminal screen with current format
+  ; TEST: SUPER TEMP
+  cmp ah, 0x08
+  je .h_08h
 
   ; <ah> = 0x09
   ; Character string output
@@ -81,24 +89,17 @@ int42h_handler:
     push ax
     push dx
 
+    ; Get keyboard input
     xor ax, ax
     int 0x16
     
-    ; ------------------------------
-    ; NOTE: DEBUG: for testing only
-    ; ------------------------------
-    cmp al, 0x1b
-    jne .ignore
-    jmp 0xffff:0x0000
-    .ignore:
-    ; ------------------------------
-
+    ; Print character to screen
     mov dl, al
     call putc
     
+    ; Reset registers, update cursor position, and exit
     pop dx
     pop ax
-
     call update_cursorpos
     jmp .exit
 
@@ -114,11 +115,18 @@ int42h_handler:
   ; Input a character from the keyboard without echoing it.
   ; @param  None
   ; @return `al` Character read
+  ; TODO: use a custom keyboard driver
   .h_07h:
     xor ax, ax
     int 0x16
     mov ah, 0x07  ; Hack in the <ah> restore
     je .exit
+
+  ; TESTING: NOT PERMANENT, FOR TESTING ONLY
+  .h_08h:
+    call tty_clear
+    call update_cursorpos
+    jmp .exit
 
   ; Print out a string to the next address in video memory terminated by `$`
   ; or null-terminated.

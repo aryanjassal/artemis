@@ -1,4 +1,4 @@
-BITS 16
+bits 16
 
 ; Updates the cursor position on the screen.
 ; TODO: allow for using custom values too
@@ -62,6 +62,7 @@ putc:
   je .handle_cr
 
   ; Otherwise print the current character
+  ; TODO: add upper bounds testing
   .print_ch:
     mov dh, [TTY_ATT]
     mov word [es:di], dx
@@ -146,6 +147,32 @@ putc:
     jmp .exit
 
   ; TODO: handle line feed
+
+tty_clear:
+  push ax
+  push cx
+  push es
+  push di
+
+  mov ax, [ADR_VIDMEM_SEG]
+  mov es, ax
+  mov ax, 0x0000
+  mov di, ax
+
+  ; Reset screen by setting all characters to <NULL>
+  mov cx, 1920
+  mov ah, [TTY_ATT]
+  xor al, al
+  rep stosw
+
+  ; Set the video memory to start of the mapped area
+  mov word [ADR_VIDMEM_OFF], 0x0000
+
+  pop di
+  pop es
+  pop cx
+  pop ax
+  ret
 
 ; Preprocessors
 KEY_BACK        equ 0x08
