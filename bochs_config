@@ -1,7 +1,7 @@
 megs: 4
 cpu: count=1, ips=5000000
-romimage: file=/usr/share/bochs/BIOS-bochs-latest, address=0xfffe0000
-vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest
+romimage: file=./BIOS-bochs-latest, address=0xfffe0000
+vgaromimage: file=./VGABIOS-lgpl-latest
 vga: extension=none
 floppya: 1_44=build/floppy.img, status=inserted
 boot: floppy

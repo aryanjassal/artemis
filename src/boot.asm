@@ -9,7 +9,7 @@ jmp code
 nop
 
 ; BIOS Parameter Block
-OEM_IDENTIFIER            db "ARTEMIS "
+OEM_IDENTIFIER            db "ARTEMS16"
 BYTES_PER_SECTOR          dw 512
 SECTORS_PER_CLUSTER       db 1
 RESERVED_SECTORS          dw 1
@@ -28,7 +28,7 @@ BOOT_DRIVE_NUMBER         db 0
 RESERVED                  db 0
 SIGNATURE                 db 0x29
 VOLUME_ID                 db 0x12, 0x34, 0x56, 0x78
-VOLUME_LABEL              db "ARTEMISROOT"
+VOLUME_LABEL              db "ARTEMIS16  "
 SYSTEM_ID                 db "FAT12   "
 
 ; Bootable code starts here

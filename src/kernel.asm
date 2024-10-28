@@ -6,19 +6,24 @@ _start:
   ; Reigster interrupts immediately
   call register_interrupts
 
+  ; mov dl, 0x7e
+  ; mov ax, 0x02
+  ; int 0x42
+
   ; Clear screen
   ; TEST: temporary
-  mov ah, 0x08
+  mov ax, 0x08
   int 0x42
 
-  ; Test int 0x21 service 0x09 (str_out)
-  mov bx, MSG_GREET
-  mov ah, 0x09
+  ; Test int 0x42 service 0x09 (str_out)
+  mov cx, MSG_GREET
+  mov ax, 0x09
   int 0x42
 
-  ; Test int 0x21 service 0x01 (kb_in)
-  mov ah, 0x01
+  ; Test int 0x42 service 0x01 (kb_in)
+  mov ax, 0x01
   .loop:
+    mov ax, 0x01
     int 0x42
     jmp .loop
 
@@ -26,12 +31,12 @@ _start:
   cli
   hlt
 
-; Include the dos interrupts
+; Include the interrupts
 %include "interrupts.asm"
 
 ; Strings (null-terminated)
 ; 0x0d stands for \n
-MSG_GREET db "Welcome to Artemis-16 v0.0.5", 0x0d, 0x00
+MSG_GREET db "Welcome to Artemis-16 alphadev", 0x0d, 0x00
 
 ; Variable declarations
 BOOT_DRIVE db 0

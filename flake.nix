@@ -12,7 +12,7 @@
       in {
         devShells.default = pkgs.mkShell {
           name = "artemis";
-          buildInputs = with pkgs; [ gnumake nasm asm-lsp ];
+          buildInputs = with pkgs; [ gnumake nasm asm-lsp bochs ];
         };
       });
 }
